@@ -1,0 +1,242 @@
+<?php
+// =========================================================
+// Главная страница Illuminos:
+//   - Топ новинки и популярные фильмы/сериалы
+//   - Категории контента (фильтрация)
+//   - Рекомендации по персональному выбору
+//   - Поиск по фильмам/сериалам (+ подсказки при вводе)
+// =========================================================
+require_once __DIR__ . '/backend/config.php';
+require_once __DIR__ . '/src/components/helpers.php';
+session_start();
+
+$type    = $_GET['type'] ?? '';                       // film | serial | ''
+$genreId = (int)($_GET['genre'] ?? 0);                // фильтр по категории
+$q       = trim((string)($_GET['q'] ?? ''));          // строка поиска
+$uid     = $_SESSION['user']['id'] ?? 0;
+if (!in_array($type, ['film', 'serial'], true)) $type = '';
+
+// Сортировка каталога (только значения из белого списка)
+$sortMap = [
+    'rating' => 'c.rating DESC',
+    'year'   => 'c.year DESC, c.rating DESC',
+    'title'  => 'c.title ASC',
+];
+$sort = $_GET['sort'] ?? 'rating';
+if (!isset($sortMap[$sort])) $sort = 'rating';
+
+/** Экранирование спецсимволов LIKE в строке поиска */
+function like_escape(string $s): string {
+    return '%' . addcslashes($s, '%_\\') . '%';
+}
+
+// ---------- AJAX: подсказки поиска ----------
+if (($_GET['action'] ?? '') === 'suggest') {
+    header('Content-Type: application/json; charset=utf-8');
+    $out = [];
+    if (io_strlen($q) >= 2) {
+        $stmt = $pdo->prepare('SELECT id, type, title, year, rating, genre_id FROM content
+                               WHERE title LIKE ? ORDER BY rating DESC LIMIT 6');
+        $stmt->execute([like_escape($q)]);
+        foreach ($stmt->fetchAll() as $row) {
+            [$h1, $h2] = io_poster_hues($row);
+            $out[] = [
+                'id' => (int)$row['id'], 'title' => $row['title'], 'year' => $row['year'],
+                'rating' => $row['rating'], 'type_label' => io_type_label($row['type']),
+                'url' => io_link($row), 'h1' => $h1, 'h2' => $h2,
+            ];
+        }
+    }
+    echo json_encode($out, JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+// ---------- Категории ----------
+$genres = $pdo->query('SELECT * FROM genres ORDER BY name')->fetchAll();
+
+// ---------- Заготовка запроса контента ----------
+$baseSql = 'SELECT c.*, g.name AS genre_name
+            FROM content c JOIN genres g ON g.id = c.genre_id
+            WHERE 1=1';
+$params = [];
+if ($type !== '') { $baseSql .= ' AND c.type = ?'; $params[] = $type; }
+if ($genreId > 0) { $baseSql .= ' AND c.genre_id = ?'; $params[] = $genreId; }
+if ($q !== '') { $baseSql .= ' AND c.title LIKE ?'; $params[] = like_escape($q); }
+
+// Топ новинки (Задание 3, п.5)
+$news = $pdo->query("SELECT c.*, g.name AS genre_name FROM content c
+                     JOIN genres g ON g.id = c.genre_id
+                     WHERE c.is_new = 1 ORDER BY c.year DESC, c.rating DESC LIMIT 8")->fetchAll();
+
+// Популярные фильмы/сериалы (Задание 3, п.5)
+$popular = $pdo->query("SELECT c.*, g.name AS genre_name FROM content c
+                        JOIN genres g ON g.id = c.genre_id
+                        WHERE c.is_popular = 1 ORDER BY c.rating DESC LIMIT 8")->fetchAll();
+
+// Рекомендации по персональному выбору (Задание 3, п.7):
+// жанры из избранного авторизованного пользователя, иначе — высокий рейтинг
+if ($uid > 0) {
+    $stmt = $pdo->prepare(
+        'SELECT DISTINCT c.*, g.name AS genre_name FROM content c
+         JOIN genres g ON g.id = c.genre_id
+         WHERE c.genre_id IN (SELECT genre_id FROM favorites f
+                              JOIN content c2 ON c2.id = f.content_id
+                              WHERE f.user_id = ?)
+           AND c.id NOT IN (SELECT content_id FROM favorites WHERE user_id = ?)
+         ORDER BY c.rating DESC LIMIT 8');
+    $stmt->execute([$uid, $uid]);
+    $recommended = $stmt->fetchAll();
+} else {
+    $recommended = $pdo->query(
+        'SELECT c.*, g.name AS genre_name FROM content c
+         JOIN genres g ON g.id = c.genre_id
+         ORDER BY c.rating DESC LIMIT 8')->fetchAll();
+}
+
+// Результат поиска / фильтра (Задания 3, п.6, п.8)
+$stmt = $pdo->prepare($baseSql . ' ORDER BY ' . $sortMap[$sort] . ' LIMIT 24');
+$stmt->execute($params);
+$filtered = $stmt->fetchAll();
+
+// Избранное текущего пользователя (для подсветки кнопок)
+$favIds = io_fav_ids($pdo, (int)$uid);
+
+// Герой: самые свежие новинки
+$heroItems = array_slice($news, 0, 5);
+
+/** Ссылка на каталог с учётом текущих фильтров (изменяем только переданные параметры) */
+function catalog_url(array $over = []): string {
+    global $type, $genreId, $q, $sort;
+    $p = array_merge(['type' => $type, 'genre' => $genreId, 'q' => $q, 'sort' => $sort], $over);
+    if (($p['sort'] ?? '') === 'rating') unset($p['sort']);
+    $p = array_filter($p, fn($v) => $v !== '' && $v !== 0 && $v !== null);
+    return '/index.php' . ($p ? '?' . http_build_query($p) : '') . '#catalog';
+}
+$hasFilters = ($type !== '' || $genreId > 0 || $q !== '' || $sort !== 'rating');
+?>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Illuminos — онлайн-кинотеатр</title>
+    <?php require __DIR__ . '/src/components/head-assets.php'; ?>
+</head>
+<body class="d-flex flex-column min-vh-100">
+<?php require __DIR__ . '/src/components/header.php'; ?>
+
+<main class="container flex-grow-1" id="main">
+    <h1 class="visually-hidden">Illuminos — онлайн-кинотеатр</h1>
+
+    <?php if ($heroItems): ?>
+    <!-- Герой: новинки с автосменой, паузой и переключением по миниатюрам -->
+    <section class="io-hero is-playing" data-hero aria-roledescription="карусель" aria-label="Новинки">
+        <div class="io-hero-slides">
+            <?php foreach ($heroItems as $i => $h): $inFavH = in_array((int)$h['id'], $favIds, true); ?>
+            <article class="io-hero-slide<?= $i === 0 ? ' is-active' : '' ?>" style="<?= io_poster_style($h) ?>"
+                     <?= $i === 0 ? '' : 'aria-hidden="true"' ?>>
+                <div class="io-hero-copy">
+                    <div class="io-hero-tags">
+                        <span class="io-tag io-tag--gold">★ <?= io_e($h['rating']) ?></span>
+                        <span class="io-tag"><?= io_e(io_type_label($h['type'])) ?></span>
+                        <span class="io-tag"><?= io_e($h['genre_name']) ?></span>
+                        <span class="io-tag"><?= io_e($h['year']) ?></span>
+                    </div>
+                    <h2 class="io-hero-title"><?= io_e($h['title']) ?></h2>
+                    <p class="io-hero-desc"><?= io_e($h['description']) ?></p>
+                    <div class="io-actions">
+                        <a class="btn btn-io" href="<?= io_link($h) ?>">Подробнее</a>
+                        <?= io_fav_button((int)$h['id'], $inFavH, !empty($_SESSION['user']), null, 'io-fav-btn--inline', true) ?>
+                    </div>
+                </div>
+                <a class="io-hero-poster" href="<?= io_link($h) ?>" tabindex="-1" aria-hidden="true">
+                    <?= io_poster($h) ?>
+                </a>
+            </article>
+            <?php endforeach; ?>
+        </div>
+        <?php if (count($heroItems) > 1): ?>
+        <div class="io-hero-nav">
+            <div class="io-hero-thumbs">
+                <?php foreach ($heroItems as $i => $h): ?>
+                <button type="button" class="io-hero-thumb<?= $i === 0 ? ' is-active' : '' ?>" style="<?= io_poster_style($h) ?>"
+                        aria-label="<?= io_e($h['title']) ?>" aria-current="<?= $i === 0 ? 'true' : 'false' ?>">
+                    <span class="io-hero-thumb-img"<?= !empty($h['poster_url']) ? ' style="background-image:url(\'' . io_e($h['poster_url']) . '\');background-size:cover;background-position:center;"' : '' ?>></span>
+                    <span class="io-hero-bar"></span>
+                </button>
+                <?php endforeach; ?>
+            </div>
+            <button type="button" class="io-hero-toggle" aria-label="Остановить автосмену">
+                <svg class="i-pause" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="5" y="4" width="5" height="16" rx="1"/><rect x="14" y="4" width="5" height="16" rx="1"/></svg>
+                <svg class="i-play" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4l13 8-13 8z"/></svg>
+            </button>
+        </div>
+        <?php endif; ?>
+    </section>
+    <?php endif; ?>
+
+    <!-- Топ новинки -->
+    <section class="io-section">
+        <h2 class="io-section-title h4">Топ новинки</h2>
+        <?php render_rail($news, $favIds, 'Топ новинки'); ?>
+    </section>
+
+    <!-- Популярное -->
+    <section class="io-section">
+        <h2 class="io-section-title h4">Популярные фильмы и сериалы</h2>
+        <?php render_rail($popular, $favIds, 'Популярные фильмы и сериалы'); ?>
+    </section>
+
+    <!-- Категории контента: фильтрация по жанрам (Задание 3, п.6) -->
+    <section class="io-section" id="catalog">
+        <h2 class="io-section-title h4">Категории</h2>
+        <div class="io-filters">
+            <div class="io-chips d-flex flex-wrap gap-2" role="group" aria-label="Категории">
+                <a class="btn btn-sm <?= $genreId === 0 ? 'btn-io' : 'btn-outline-light' ?>" href="<?= io_e(catalog_url(['genre' => 0])) ?>"
+                   <?= $genreId === 0 ? 'aria-current="true"' : '' ?>>Все</a>
+                <?php foreach ($genres as $g): ?>
+                    <a class="btn btn-sm <?= $genreId === (int)$g['id'] ? 'btn-io' : 'btn-outline-light' ?>"
+                       href="<?= io_e(catalog_url(['genre' => (int)$g['id']])) ?>"
+                       <?= $genreId === (int)$g['id'] ? 'aria-current="true"' : '' ?>><?= htmlspecialchars($g['name']) ?></a>
+                <?php endforeach; ?>
+            </div>
+            <div class="io-filters-row">
+                <div class="io-segment" role="group" aria-label="Тип контента">
+                    <span class="io-filter-label">Показать:</span>
+                    <a class="btn btn-sm <?= $type === '' ? 'btn-io' : 'btn-outline-light' ?>" href="<?= io_e(catalog_url(['type' => ''])) ?>">Всё</a>
+                    <a class="btn btn-sm <?= $type === 'film' ? 'btn-io' : 'btn-outline-light' ?>" href="<?= io_e(catalog_url(['type' => 'film'])) ?>">Фильмы</a>
+                    <a class="btn btn-sm <?= $type === 'serial' ? 'btn-io' : 'btn-outline-light' ?>" href="<?= io_e(catalog_url(['type' => 'serial'])) ?>">Сериалы</a>
+                </div>
+                <div class="io-sort" role="group" aria-label="Сортировка">
+                    <span class="io-filter-label">Сортировка:</span>
+                    <a class="btn btn-sm <?= $sort === 'rating' ? 'btn-io' : 'btn-outline-light' ?>" href="<?= io_e(catalog_url(['sort' => 'rating'])) ?>">По рейтингу</a>
+                    <a class="btn btn-sm <?= $sort === 'year' ? 'btn-io' : 'btn-outline-light' ?>" href="<?= io_e(catalog_url(['sort' => 'year'])) ?>">Сначала новые</a>
+                    <a class="btn btn-sm <?= $sort === 'title' ? 'btn-io' : 'btn-outline-light' ?>" href="<?= io_e(catalog_url(['sort' => 'title'])) ?>">По названию</a>
+                </div>
+                <?php if ($hasFilters): ?>
+                    <a class="small" href="/index.php#catalog">Сбросить фильтры</a>
+                <?php endif; ?>
+            </div>
+        </div>
+        <?php if ($q !== ''): ?>
+            <p class="text-secondary">Результаты поиска по запросу «<?= htmlspecialchars($q) ?>»:</p>
+        <?php endif; ?>
+        <?php if ($filtered): ?>
+            <p class="io-results-meta" aria-live="polite">Показано: <?= count($filtered) ?></p>
+        <?php endif; ?>
+        <?php render_cards($filtered, $favIds,
+            'Измените запрос или выберите другую категорию.',
+            $hasFilters ? '<a class="btn btn-io btn-sm" href="/index.php#catalog">Сбросить фильтры</a>' : ''); ?>
+    </section>
+
+    <!-- Рекомендации по персональному выбору (Задание 3, п.7) -->
+    <section class="io-section">
+        <h2 class="io-section-title h4">
+            <?= $uid > 0 ? 'Рекомендуем вам' : 'Высоко оцененные зрителями' ?>
+        </h2>
+        <?php render_rail($recommended, $favIds, $uid > 0 ? 'Рекомендуем вам' : 'Высоко оцененные зрителями',
+            $uid > 0 ? 'Добавьте несколько фильмов в избранное — мы подберём похожие.' : ''); ?>
+    </section>
+</main>
+
+<?php require __DIR__ . '/src/components/footer.php'; ?>
