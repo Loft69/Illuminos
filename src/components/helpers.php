@@ -153,6 +153,35 @@ function io_fav_ids(PDO $pdo, int $uid): array {
 }
 
 /**
+ * Есть ли у пользователя право смотреть контент:
+ * активная подписка (subscriber) или роль администратора.
+ * Гость и обычный user смотреть не могут — им предложат подписку.
+ */
+function io_can_watch(PDO $pdo, array $user): bool {
+    if (($user['role'] ?? '') === 'admin') return true;
+    if (empty($user['id'])) return false;
+    $st = $pdo->prepare(
+        'SELECT 1 FROM user_subscriptions
+         WHERE user_id = ? AND end_date >= CURDATE() LIMIT 1');
+    $st->execute([(int)$user['id']]);
+    return (bool)$st->fetch();
+}
+
+/** Подписка пользователя (тариф + срок) или null, если не оформлена */
+function io_subscription(PDO $pdo, array $user): ?array {
+    if (empty($user['id'])) return null;
+    $st = $pdo->prepare(
+        'SELECT us.*, t.name AS tariff_name, t.price, t.description
+         FROM user_subscriptions us
+         JOIN tariffs t ON t.id = us.tariff_id
+         WHERE us.user_id = ? AND us.end_date >= CURDATE()
+         ORDER BY us.end_date DESC LIMIT 1');
+    $st->execute([(int)$user['id']]);
+    $row = $st->fetch();
+    return $row ?: null;
+}
+
+/**
  * Запись просмотра в историю. Повторное открытие страницы в течение
  * 10 минут не создаёт дубль (раньше каждое обновление добавляло строку).
  */
@@ -167,7 +196,7 @@ function io_log_view(PDO $pdo, int $uid, int $contentId): void {
 }
 
 /** Шапка страницы фильма/сериала: постер, описание, режиссёр, актёры, действия */
-function render_detail(array $c, bool $inFav): void {
+function render_detail(array $c, bool $inFav, bool $canWatch = false): void {
     $loggedIn = !empty($_SESSION['user']);
     $actors   = array_values(array_filter(array_map('trim', explode(',', (string)$c['actors'])), 'strlen'));
     $pct      = round(max(0, min(100, (float)$c['rating'] * 10)), 1);
@@ -189,8 +218,12 @@ function render_detail(array $c, bool $inFav): void {
                     <?php if (!$actors): ?><?= io_e($c['actors']) ?><?php endif; ?>
                 </p>
                 <div class="io-actions">
+                    <a href="#watch" class="btn btn-io io-watch-btn">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4l13 8-13 8z"/></svg>
+                        Смотреть
+                    </a>
                     <?php if (!empty($c['trailer_url'])): ?>
-                        <a href="#trailer" class="btn btn-io">Смотреть трейлер</a>
+                        <a href="#trailer" class="btn btn-outline-light">Трейлер</a>
                     <?php endif; ?>
                     <?= io_fav_button((int)$c['id'], $inFav, $loggedIn, null, 'io-fav-btn--inline', true) ?>
                     <button type="button" class="btn btn-outline-light" data-share>Поделиться</button>
@@ -198,6 +231,52 @@ function render_detail(array $c, bool $inFav): void {
             </div>
         </div>
     </div>
+    <?php
+}
+
+/**
+ * Блок просмотра (Задание 6 + ТЗ онлайн-кинотеатра):
+ *   - без подписки  → заглушка «Сначала оформите подписку»;
+ *   - с подпиской   → видео-блок с постером и кнопкой Play
+ *                     (заглушка плеера: демонстрационный проект).
+ */
+function render_watch_block(array $c, bool $canWatch): void {
+    [$h1, $h2] = io_poster_hues($c);
+    $isSerial = ($c['type'] ?? '') === 'serial';
+    ?>
+    <section class="io-section" id="watch">
+        <h2 class="io-section-title h4"><?= $isSerial ? 'Смотреть сериал' : 'Смотреть фильм' ?></h2>
+        <?php if ($canWatch): ?>
+            <!-- Плеер: видео-блок с кнопкой Play (учебная заглушка трансляции) -->
+            <div class="io-player" style="--h1:<?= $h1 ?>;--h2:<?= $h2 ?>;" data-player data-title="<?= io_e($c['title']) ?>">
+                <div class="io-player-screen<?= !empty($c['poster_url']) ? ' has-image' : '' ?>">
+                    <?php if (!empty($c['poster_url'])): ?>
+                        <img src="<?= io_e($c['poster_url']) ?>" alt="" loading="lazy" aria-hidden="true">
+                    <?php endif; ?>
+                    <button type="button" class="io-player-play" data-player-play aria-label="Смотреть «<?= io_e($c['title']) ?>»">
+                        <span class="io-player-play-icon" aria-hidden="true">
+                            <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4l13 8-13 8z"/></svg>
+                        </span>
+                        <span class="io-player-play-label">Воспроизвести</span>
+                    </button>
+                    <span class="io-player-mark">HD</span>
+                </div>
+                <div class="io-player-bar" aria-hidden="true">
+                    <span class="io-player-bar-fill" style="--w:0%"></span>
+                </div>
+            </div>
+        <?php else: ?>
+            <!-- Без подписки смотреть нельзя: сначала подписка -->
+            <div class="io-sub-gate" style="--h1:<?= $h1 ?>;--h2:<?= $h2 ?>;">
+                <svg class="io-sub-gate-icon" width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0114 0v4"/></svg>
+                <h3 class="io-sub-gate-title">Просмотр по подписке</h3>
+                <p class="io-sub-gate-text">Этот <?= $isSerial ? 'сериал' : 'фильм' ?> доступен подписчикам Illuminos.
+                    Выберите тариф — и смотрите на любом устройстве без ограничений.</p>
+                <a href="/payment.php" class="btn btn-io">Оформить подписку</a>
+                <a href="/payment.php#compare" class="io-sub-gate-link">Сравнить тарифы</a>
+            </div>
+        <?php endif; ?>
+    </section>
     <?php
 }
 

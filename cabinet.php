@@ -48,13 +48,8 @@ $stmt->execute([$uid]);
 $user = $stmt->fetch();
 
 // Подписка на сервис (Задание 5)
-$stmt = $pdo->prepare(
-    'SELECT us.*, t.name AS tariff_name, t.price FROM user_subscriptions us
-     JOIN tariffs t ON t.id = us.tariff_id
-     WHERE us.user_id = ? AND us.end_date >= CURDATE()
-     ORDER BY us.end_date DESC LIMIT 1');
-$stmt->execute([$uid]);
-$subscription = $stmt->fetch();
+$subscription = io_subscription($pdo, $_SESSION['user'] ?? []);
+$canWatch = (bool)$subscription || $role === 'admin';
 
 // Сколько дней осталось и какая доля срока прошла
 $daysLeft = 0; $leftPct = 0;
@@ -94,9 +89,11 @@ $stmt->execute([$uid]);
 $payments = $stmt->fetchAll();
 $payLabels = ['paid' => 'Оплачен', 'new' => 'Ожидает оплаты', 'cancelled' => 'Отменён'];
 
-$fio = trim($user['last_name'] . ' ' . $user['first_name'] . ' ' . $user['patronymic']);
 $initials = io_initial((string)$user['first_name']) . io_initial((string)$user['last_name']);
 $role = (string)$user['role'];
+$roleLabels = ['admin' => 'Администратор', 'subscriber' => 'Подписчик', 'user' => 'Пользователь'];
+$roleLabel = $roleLabels[$role] ?? $role;
+$regDate = date('d.m.Y', strtotime($user['created_at']));
 ?>
 <!DOCTYPE html>
 <html lang="ru">
@@ -110,41 +107,55 @@ $role = (string)$user['role'];
 <?php require __DIR__ . '/src/components/header.php'; ?>
 
 <main class="container flex-grow-1" id="main">
-    <h1 class="h3 mt-4 mb-3 io-form-title">Личный кабинет</h1>
+    <!-- Шапка профиля: аватар, ФИО, роль, счётчики -->
+    <div class="io-profile-head mt-4">
+        <div class="io-profile-main">
+            <div class="io-avatar io-avatar--lg" aria-hidden="true"><?= io_e($initials) ?></div>
+            <div class="io-profile-info">
+                <h1 class="io-profile-name"><?= htmlspecialchars($user['first_name']) ?> <?= htmlspecialchars($user['last_name']) ?></h1>
+                <?php if ($user['patronymic']): ?><p class="io-profile-patronymic mb-0"><?= htmlspecialchars($user['patronymic']) ?></p><?php endif; ?>
+                <p class="io-profile-meta mb-0">
+                    <span class="io-role io-role--<?= io_e($role) ?>"><?= htmlspecialchars($roleLabel) ?></span>
+                    <?php if ($canWatch): ?><span class="io-profile-badge io-profile-badge--sub">доступ к просмотру</span><?php endif; ?>
+                    <span class="text-secondary">на Illuminos с <?= $regDate ?></span>
+                </p>
+            </div>
+        </div>
+        <div class="io-stats">
+            <div><div class="io-stat-num"><?= count($favorites) ?></div><div class="io-stat-label">в избранном</div></div>
+            <div><div class="io-stat-num" data-stat-history><?= count($history) ?></div><div class="io-stat-label">в истории</div></div>
+            <div><div class="io-stat-num"><?= count($payments) ?></div><div class="io-stat-label">платежей</div></div>
+        </div>
+    </div>
 
     <div class="row g-4">
-        <!-- Левая колонка: профиль и подписка -->
+        <!-- Левая колонка: подписка и данные аккаунта -->
         <div class="col-lg-4">
-            <!-- Профиль -->
-            <div class="io-card p-3 mb-4">
-                <h2 class="h6 mb-3">Профиль</h2>
-                <div class="d-flex align-items-center gap-3 mb-2">
-                    <div class="io-avatar" aria-hidden="true"><?= io_e($initials) ?></div>
-                    <div style="min-width:0">
-                        <p class="mb-1"><?= htmlspecialchars($fio) ?></p>
-                        <p class="mb-0">Роль: <span class="io-role io-role--<?= io_e($role) ?>"><?= htmlspecialchars($role) ?></span></p>
-                    </div>
-                </div>
-                <p class="mb-0 text-secondary small" style="overflow-wrap:anywhere">Логин: <?= htmlspecialchars($user['login']) ?> · E-mail: <?= htmlspecialchars($user['email']) ?></p>
-                <div class="io-stats">
-                    <div><div class="io-stat-num"><?= count($favorites) ?></div><div class="io-stat-label">в избранном</div></div>
-                    <div><div class="io-stat-num" data-stat-history><?= count($history) ?></div><div class="io-stat-label">в истории</div></div>
-                </div>
-            </div>
-
             <!-- Подписка на сервис (Задание 5) -->
-            <div class="io-card p-3 mb-4">
-                <h2 class="h6">Подписка</h2>
+            <div class="io-card p-3 mb-4 io-sub-card<?= $subscription ? ' is-active' : '' ?>">
+                <h2 class="h6 mb-3">Подписка</h2>
                 <?php if ($subscription): ?>
-                    <p class="mb-2">Тариф «<?= htmlspecialchars($subscription['tariff_name']) ?>» активен
+                    <p class="mb-1">Тариф «<?= htmlspecialchars($subscription['tariff_name']) ?>» активен
                         до <?= htmlspecialchars(date('d.m.Y', strtotime($subscription['end_date']))) ?>.</p>
                     <div class="io-progress" role="progressbar" aria-label="Оставшийся срок подписки"
                          aria-valuemin="0" aria-valuemax="100" aria-valuenow="<?= $leftPct ?>"><span style="--w:<?= $leftPct ?>%"></span></div>
-                    <p class="text-secondary small mt-2 mb-0">Осталось <?= $daysLeft ?> <?= io_plural($daysLeft, ['день', 'дня', 'дней']) ?>.</p>
+                    <p class="text-secondary small mt-2">Осталось <?= $daysLeft ?> <?= io_plural($daysLeft, ['день', 'дня', 'дней']) ?>.</p>
+                    <a href="/payment.php" class="btn btn-outline-light btn-sm w-100 mt-1">Продлить или сменить тариф</a>
                 <?php else: ?>
-                    <p class="mb-0">Подписка не оформлена.
-                        <a href="/payment.php" class="text-decoration-none">Оформить →</a></p>
+                    <p class="mb-2">Подписка не оформлена — просмотр фильмов и сериалов недоступен.</p>
+                    <a href="/payment.php" class="btn btn-io btn-sm w-100">Оформить подписку</a>
                 <?php endif; ?>
+            </div>
+
+            <!-- Данные аккаунта -->
+            <div class="io-card p-3 mb-4">
+                <h2 class="h6 mb-3">Аккаунт</h2>
+                <dl class="io-account-list mb-0">
+                    <div><dt>Логин</dt><dd><?= htmlspecialchars($user['login']) ?></dd></div>
+                    <div><dt>E-mail</dt><dd><?= htmlspecialchars($user['email']) ?></dd></div>
+                    <div><dt>Роль</dt><dd><?= htmlspecialchars($roleLabel) ?></dd></div>
+                </dl>
+                <a href="/backend/auth.php?action=logout" class="btn btn-outline-light btn-sm w-100 mt-3">Выйти из аккаунта</a>
             </div>
         </div>
 

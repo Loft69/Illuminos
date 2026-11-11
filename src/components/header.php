@@ -40,9 +40,6 @@ $ioHome  = $ioOnIdx && $ioType === '' && $ioGenre === 0 && $q === '';
                         <?php endforeach; ?>
                     </ul>
                 </li>
-                <?php if (isset($_SESSION['user']) && ($_SESSION['user']['role'] ?? '') === 'admin'): ?>
-                    <li class="nav-item"><a class="nav-link text-warning fw-bold" href="/admin.php">Админ-панель</a></li>
-                <?php endif; ?>
             </ul>
             <!-- Поиск по фильмам/сериалам (Задание 3) + подсказки при вводе -->
             <form class="io-search-form me-lg-2" action="/index.php" method="get" role="search">
@@ -56,11 +53,47 @@ $ioHome  = $ioOnIdx && $ioType === '' && $ioGenre === 0 && $q === '';
                 <button class="btn btn-io io-search-btn" type="submit">Найти</button>
             </form>
             <?php if (isset($_SESSION['user'])): ?>
-                <a href="/cabinet.php" class="io-user ms-1 mt-2 mt-lg-0" title="Личный кабинет">
-                    <span class="io-user-avatar" aria-hidden="true"><?= io_initial((string)$_SESSION['user']['first_name']) ?></span>
-                    <span class="io-user-name d-none d-xl-inline"><?= htmlspecialchars($_SESSION['user']['first_name']) ?></span>
-                </a>
-                <a href="/backend/auth.php?action=logout" class="btn btn-outline-light btn-sm io-auth-btn ms-1 mt-2 mt-lg-0">Выход</a>
+                <?php
+                    $ioUserName = (string)$_SESSION['user']['first_name'];
+                    $ioUserRole = (string)($_SESSION['user']['role'] ?? '');
+                    $ioHasSub   = io_can_watch($pdo, $_SESSION['user']);
+                ?>
+                <div class="dropdown io-user-drop ms-1 mt-2 mt-lg-0">
+                    <button type="button" class="io-user" data-bs-toggle="dropdown" data-bs-auto-close="outside"
+                            aria-expanded="false" aria-haspopup="true" title="Личный кабинет">
+                        <span class="io-user-avatar<?= $ioHasSub ? ' is-sub' : '' ?>" aria-hidden="true"><?= io_initial($ioUserName) ?></span>
+                        <span class="io-user-name d-none d-xl-inline"><?= htmlspecialchars($ioUserName) ?></span>
+                        <svg class="io-user-chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end io-user-menu">
+                        <li class="io-user-menu-head">
+                            <span class="io-user-menu-name"><?= htmlspecialchars($ioUserName) ?></span>
+                            <span class="io-role io-role--<?= htmlspecialchars($ioUserRole) ?>"><?= htmlspecialchars($ioUserRole) ?></span>
+                        </li>
+                        <?php if ($ioHasSub): ?>
+                            <li class="io-user-menu-sub"><span aria-hidden="true">★</span> Подписка активна</li>
+                        <?php else: ?>
+                            <li class="io-user-menu-sub"><a href="/payment.php">Оформить подписку</a></li>
+                        <?php endif; ?>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item" href="/cabinet.php">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                Личный кабинет
+                            </a>
+                        </li>
+                        <?php if ($ioUserRole === 'admin'): ?>
+                            <li><a class="dropdown-item" href="/admin.php">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+                                Админ-панель
+                            </a></li>
+                        <?php endif; ?>
+                        <li><a class="dropdown-item io-menu-logout" href="/backend/auth.php?action=logout">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+                            Выйти
+                        </a></li>
+                    </ul>
+                </div>
             <?php else: ?>
                 <a href="/login.php" class="btn btn-outline-light btn-sm io-auth-btn ms-1 mt-2 mt-lg-0">Войти</a>
                 <a href="/register.php" class="btn btn-io btn-sm io-auth-btn ms-1 mt-2 mt-lg-0">Регистрация</a>

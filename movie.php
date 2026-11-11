@@ -20,6 +20,9 @@ $stmt->execute([$id]);
 $film = $stmt->fetch();
 if (!$film) { http_response_code(404); exit('Фильм не найден.'); }
 
+// Право просмотра: активная подписка или администратор (ТЗ: просмотр по подписке)
+$canWatch = io_can_watch($pdo, $_SESSION['user'] ?? []);
+
 // Запись в историю просмотра (Задание 5: история просмотра)
 io_log_view($pdo, (int)$uid, $id);
 
@@ -47,7 +50,10 @@ $favIds = io_fav_ids($pdo, (int)$uid);
 
 <main class="container flex-grow-1" id="main">
     <!-- Постер-заглушка, описание и оценки, режиссёр, актёры (Задание 4) -->
-    <?php render_detail($film, in_array($id, $favIds, true)); ?>
+    <?php render_detail($film, in_array($id, $favIds, true), $canWatch); ?>
+
+    <!-- Просмотр: по подписке — плеер, без подписки — заглушка с предложением -->
+    <?php render_watch_block($film, $canWatch); ?>
 
     <!-- Трейлер фильма (Задание 4) -->
     <?php render_trailer($film); ?>

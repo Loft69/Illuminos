@@ -462,6 +462,34 @@ if (hero) {
     setPlaying();
 }
 
+// ---------- Плеер-заглушка (страницы фильма/сериала) ----------
+// По кнопке Play плеер «подключается к трансляции»: учебная заглушка,
+// демонстрирующая поведение реального плеера без видеофайла.
+const player = $('[data-player]');
+if (player) {
+    const playBtn = $('[data-player-play]', player);
+    const bar = $('.io-player-bar-fill', player);
+    playBtn.addEventListener('click', () => {
+        const label = $('[data-player-play]', player);
+        const icon = $('.io-player-play-icon', player);
+        if (player.classList.contains('is-loading')) return;
+        player.classList.add('is-loading');
+        icon.classList.add('is-spinning');
+        label.querySelector('.io-player-play-label').textContent = 'Подключаемся к трансляции…';
+        ioToast('Плеер загружает трансляцию «' + player.dataset.title + '»', {type: 'info'});
+        // Имитация буферизации: затем открываем доступ к потоку
+        setTimeout(() => {
+            player.classList.remove('is-loading');
+            player.classList.add('is-onair');
+            icon.classList.remove('is-spinning');
+            label.querySelector('.io-player-play-label').textContent = 'Идёт трансляция';
+            if (bar) bar.style.setProperty('--w', '0%');
+            requestAnimationFrame(() => { if (bar) bar.style.setProperty('--w', '38%'); });
+            ioToast('Трансляция доступна. В учебной версии плеера видео не подключено.', {type: 'success', duration: 6000});
+        }, 1400);
+    });
+}
+
 // ---------- Ленты карточек ----------
 $$('[data-rail]').forEach((rail) => {
     const track = $('.io-rail-track', rail);

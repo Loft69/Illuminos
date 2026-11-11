@@ -19,6 +19,9 @@ $stmt->execute([$id]);
 $serial = $stmt->fetch();
 if (!$serial) { http_response_code(404); exit('Сериал не найден.'); }
 
+// Право просмотра: активная подписка или администратор (ТЗ: просмотр по подписке)
+$canWatch = io_can_watch($pdo, $_SESSION['user'] ?? []);
+
 io_log_view($pdo, (int)$uid, $id);
 
 // Сезоны и эпизоды (Задание 4)
@@ -56,7 +59,10 @@ $chev = '<svg class="io-chev" width="16" height="16" viewBox="0 0 24 24" fill="n
 <?php require __DIR__ . '/src/components/header.php'; ?>
 
 <main class="container flex-grow-1" id="main">
-    <?php render_detail($serial, in_array($id, $favIds, true)); ?>
+    <?php render_detail($serial, in_array($id, $favIds, true), $canWatch); ?>
+
+    <!-- Просмотр: по подписке — плеер, без подписки — заглушка с предложением -->
+    <?php render_watch_block($serial, $canWatch); ?>
 
     <!-- Список сезонов и эпизодов (Задание 4) -->
     <section class="io-section">
