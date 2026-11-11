@@ -141,8 +141,7 @@ $faq = [
             <div class="io-card io-tariff p-4 text-center h-100 d-flex flex-column<?= $isFeatured ? ' is-featured' : '' ?>">
                 <?php if ($isOwn): ?><span class="io-tariff-flag io-tariff-flag--own">Ваш тариф</span>
                 <?php elseif ($isFeatured): ?><span class="io-tariff-flag">Выбор зрителей</span><?php endif; ?>
-                <h2 class="h5"><?= htmlspecialchars($t['name']) ?></h2>
-                <p class="display-6 io-tariff-price mb-1"><?= $priceText ?> ₽
+                <h2 class="h5"><?= htmlspecialchars($t['name']) ?></h2>                <p class="display-6 io-tariff-price mb-1"><?= $priceText ?> ₽
                     <small class="fs-6 text-secondary">/ <?= (int)$t['duration_days'] ?> дней</small></p>
                 <?php if ($features): ?>
                     <ul class="io-tariff-list">

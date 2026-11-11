@@ -403,7 +403,7 @@ body {
 /* Кабинет: панели контента не обрезаем — сетка избранного внутри
    растягивает панель по высоте, а не вылезает за её границы. */
 .io-card.p-3 { overflow: visible; }
-.io-card.p-4 { overflow: hidden; }
+.io-card.p-4 { overflow: visible; }
 /* тонкий хайлайт по верхнему краю панели */
 .io-card.p-3::before, .io-card.p-4::before {
     content: ""; position: absolute; inset: 0 0 auto 0; height: 1px;
@@ -1114,10 +1114,11 @@ video.io-hero-video {
 }
 .io-tariff h2 { font-family: var(--io-font-display); font-weight: 800; }
 .io-tariff-flag {
-    position: absolute; top: -13px; left: 50%; transform: translateX(-50%);
+    align-self: center;
     background: linear-gradient(180deg, #ff6a1f, var(--io-accent)); color: #fff;
     font-size: .72rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
     padding: 3px 14px; border-radius: 7px; white-space: nowrap;
+    margin-bottom: .6rem;
     box-shadow: 0 4px 14px rgba(255, 85, 0, .4);
 }
 .io-tariff-flag--own { background: linear-gradient(180deg, #4cc24c, #2f9a2f); color: #06260f; }
