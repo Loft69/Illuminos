@@ -268,7 +268,9 @@ function render_watch_block(array $c, bool $canWatch): void {
         <?php else: ?>
             <!-- Без подписки смотреть нельзя: сначала подписка -->
             <div class="io-sub-gate" style="--h1:<?= $h1 ?>;--h2:<?= $h2 ?>;">
-                <svg class="io-sub-gate-icon" width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0114 0v4"/></svg>
+                <span class="io-sub-gate-icon" aria-hidden="true">
+                    <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0114 0v4"/></svg>
+                </span>
                 <h3 class="io-sub-gate-title">Просмотр по подписке</h3>
                 <p class="io-sub-gate-text">Этот <?= $isSerial ? 'сериал' : 'фильм' ?> доступен подписчикам Illuminos.
                     Выберите тариф — и смотрите на любом устройстве без ограничений.</p>
