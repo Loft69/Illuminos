@@ -366,6 +366,13 @@ body {
     transition: transform .2s ease, box-shadow .2s ease;
     height: 100%;
 }
+/* В кабинете карточки избранного не должны тянуться на высоту колонки
+   и обрезаться панелью: контент определяет свою высоту. */
+.io-fav-col .io-card { height: auto; }
+/* Панели-обёртки (p-3/p-4) — контентные блоки кабинета: height:auto,
+   иначе height:100% из базовой .io-card растягивает панель на всю
+   высоту колонки грида — появляется огромная пустая панель. */
+.io-card.p-3, .io-card.p-4 { height: auto; }
 .io-card > .io-card-link > .io-poster,
 .io-card > .io-card-link {
     border-radius: var(--io-radius);
@@ -390,10 +397,13 @@ body {
     background-color: var(--io-bg-2);
     border: 1px solid var(--io-line);
     border-radius: var(--io-radius-lg);
-    overflow: hidden;
     transition: border-color .25s ease, box-shadow .25s ease;
     box-shadow: 0 10px 30px rgba(0, 0, 0, .25);
 }
+/* Кабинет: панели контента не обрезаем — сетка избранного внутри
+   растягивает панель по высоте, а не вылезает за её границы. */
+.io-card.p-3 { overflow: visible; }
+.io-card.p-4 { overflow: hidden; }
 /* тонкий хайлайт по верхнему краю панели */
 .io-card.p-3::before, .io-card.p-4::before {
     content: ""; position: absolute; inset: 0 0 auto 0; height: 1px;
@@ -800,9 +810,27 @@ video.io-hero-video {
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, .35);
     animation: io-meter-fill 1s cubic-bezier(.2, .7, .2, 1) .2s both; transform-origin: left;
 }
+/* История и платежи в кабинете: компактные строки, аккуратный перенос текста */
+.io-card.p-3 .list-group-item {
+    --bs-list-group-item-padding-y: .5rem;
+    --bs-list-group-item-padding-x: .75rem;
+    --bs-list-group-border-color: var(--io-line);
+    font-size: .88rem;
+    min-width: 0;
+    background: transparent;
+}
+.io-card.p-3 .list-group-item > span { min-width: 0; }
+.io-card.p-3 .list-group-item a { overflow-wrap: anywhere; }
 .io-history li { transition: background-color .2s ease; }
 .io-history li:hover { background: rgba(255, 255, 255, .04) !important; }
 .io-history-type { font-size: .72rem; color: var(--io-muted); border: 1px solid var(--io-line); padding: 0 7px; border-radius: 999px; margin-left: .5rem; }
+/* Кабинет: карточки избранного компактнее (меньше отступы сетки и тела) */
+[data-fav-grid] { --bs-gutter-x: .6rem; --bs-gutter-y: .8rem; }
+[data-fav-grid] .io-card-body { padding: .5rem .1rem .1rem; }
+[data-fav-grid] .io-card-title { font-size: .85rem; }
+[data-fav-grid] .io-card-meta { font-size: .74rem; }
+[data-fav-grid] .io-fav-btn { width: 28px; height: 28px; line-height: 28px; font-size: .9rem; }
+
 .io-pay-status { font-size: .72rem; padding: 2px 9px; border-radius: 6px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; }
 .io-pay-status--paid { background: rgba(59, 179, 59, .15); color: #6fe06f; border: 1px solid rgba(59, 179, 59, .35); }
 .io-pay-status--new { background: rgba(245, 197, 24, .12); color: var(--io-gold); border: 1px solid rgba(245, 197, 24, .35); }

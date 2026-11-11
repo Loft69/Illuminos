@@ -670,7 +670,7 @@ if (clearBtn) {
             armed = true;
             clearBtn.textContent = 'Нажмите ещё раз, чтобы очистить';
             clearBtn.classList.add('is-armed');
-            t = setTimeout(() => { armed = false; clearBtn.textContent = 'Очистить историю'; clearBtn.classList.remove('is-armed'); }, 4000);
+            t = setTimeout(() => { armed = false; clearBtn.textContent = 'Очистить'; clearBtn.classList.remove('is-armed'); }, 4000);
             return;
         }
         clearTimeout(t);
@@ -686,7 +686,7 @@ if (clearBtn) {
             ioToast('История просмотра очищена', {type: 'success'});
         } catch (err) {
             armed = false;
-            clearBtn.textContent = 'Очистить историю';
+            clearBtn.textContent = 'Очистить';
             clearBtn.classList.remove('is-armed');
             ioToast('Не удалось очистить историю.', {type: 'error'});
         }

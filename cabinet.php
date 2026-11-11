@@ -170,7 +170,10 @@ $regDate = date('d.m.Y', strtotime($user['created_at']));
         <div class="col-lg-8">
             <!-- Избранное (Задание 5) -->
             <div class="io-card p-3 mb-3">
-                <h2 class="h6 mb-3">Избранное</h2>
+                <div class="io-side-head mb-2">
+                    <h2 class="io-side-title">Избранное</h2>
+                    <span class="text-secondary small"><?= count($favorites) ?></span>
+                </div>
                 <div class="row g-3" data-fav-grid>
                     <?php foreach ($favorites as $f): ?>
                     <div class="col-6 col-sm-4 col-md-3 io-fav-col">
@@ -192,9 +195,9 @@ $regDate = date('d.m.Y', strtotime($user['created_at']));
 
             <!-- История просмотра (Задание 5) -->
             <div class="io-card p-3 mb-3">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h2 class="h6 mb-0">История просмотра</h2>
-                    <?php if ($history): ?><button type="button" class="io-link-danger" data-clear-history>Очистить историю</button><?php endif; ?>
+                <div class="io-side-head mb-2">
+                    <h2 class="io-side-title">История просмотра</h2>
+                    <?php if ($history): ?><button type="button" class="io-link-danger" data-clear-history>Очистить</button><?php endif; ?>
                 </div>
                 <div data-history>
                 <?php if ($history): ?>
@@ -217,7 +220,10 @@ $regDate = date('d.m.Y', strtotime($user['created_at']));
             <!-- Платежи -->
             <?php if ($payments): ?>
             <div class="io-card p-3 mb-3">
-                <h2 class="h6 mb-2">Платежи</h2>
+                <div class="io-side-head mb-2">
+                    <h2 class="io-side-title">Платежи</h2>
+                    <span class="text-secondary small"><?= count($payments) ?></span>
+                </div>
                 <ul class="list-group list-group-flush">
                     <?php foreach ($payments as $p): ?>
                         <li class="list-group-item bg-transparent text-light d-flex justify-content-between align-items-center gap-3">
