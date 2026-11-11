@@ -127,6 +127,8 @@ foreach ($heroItems as &$h) {
     $h['hero_video'] = $heroVideoMap[(int)$h['id']] ?? null;
 }
 unset($h);
+// Подписчик ли текущий пользователь: в герое меняется текст главной кнопки
+$canWatchHero = io_can_watch($pdo, $_SESSION['user'] ?? []);
 
 /** Ссылка на каталог с учётом текущих фильтров (изменяем только переданные параметры) */
 function catalog_url(array $over = []): string {
@@ -173,7 +175,13 @@ $hasFilters = ($type !== '' || $genreId > 0 || $q !== '' || $sort !== 'rating');
                     <h2 class="io-hero-title"><?= io_e($h['title']) ?></h2>
                     <p class="io-hero-desc"><?= io_e($h['description']) ?></p>
                     <div class="io-actions">
-                        <a class="btn btn-io" href="<?= io_link($h) ?>">Подробнее</a>
+                        <a class="btn btn-io" href="<?= io_link($h) ?>">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4l13 8-13 8z"/></svg>
+                            <?= $canWatchHero ? 'Смотреть' : 'Подробнее' ?>
+                        </a>
+                        <?php if (!$canWatchHero): ?>
+                            <a class="btn btn-outline-light" href="/payment.php">Подписка</a>
+                        <?php endif; ?>
                         <?= io_fav_button((int)$h['id'], $inFavH, !empty($_SESSION['user']), null, 'io-fav-btn--inline', true) ?>
                     </div>
                 </div>

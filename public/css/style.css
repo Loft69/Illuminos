@@ -618,6 +618,8 @@ video.io-hero-video {
     transform-origin: left; animation: io-meter-fill 1s cubic-bezier(.2, .7, .2, 1) .2s both;
 }
 .io-actions { display: flex; flex-wrap: wrap; gap: .6rem; }
+.io-actions .btn-io { display: inline-flex; align-items: center; gap: .45rem; }
+.io-actions .btn-io svg { flex: none; }
 .io-trailer { border-radius: var(--io-radius); overflow: hidden; border: 1px solid var(--io-line); background: #000; }
 
 /* Seasons & episodes */
