@@ -122,9 +122,9 @@ $regDate = date('d.m.Y', strtotime($user['created_at']));
             </div>
         </div>
         <div class="io-stats">
-            <div><span class="io-stat-num"><?= count($favorites) ?></span><span class="io-stat-label">в избранном</span></div>
-            <div><span class="io-stat-num" data-stat-history><?= count($history) ?></span><span class="io-stat-label">в истории</span></div>
-            <div><span class="io-stat-num"><?= count($payments) ?></span><span class="io-stat-label">платежей</span></div>
+            <div><span class="io-stat-num"><?= count($favorites) ?></span><span class="io-stat-label"> в избранном</span></div>
+            <div><span class="io-stat-num" data-stat-history><?= count($history) ?></span><span class="io-stat-label"> в истории</span></div>
+            <div><span class="io-stat-num"><?= count($payments) ?></span><span class="io-stat-label"> платежей</span></div>
         </div>
     </div>
 

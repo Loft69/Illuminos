@@ -801,6 +801,7 @@ video.io-hero-video {
 .io-role--subscriber { background: rgba(255, 85, 0, .16); color: var(--io-accent-soft); border: 1px solid rgba(255, 85, 0, .38); }
 .io-role--admin { background: rgba(245, 197, 24, .14); color: var(--io-gold); border: 1px solid rgba(245, 197, 24, .4); }
 .io-stats { display: flex; gap: 1.8rem; margin: 0; padding: 0; }
+.io-stats > div { display: flex; align-items: baseline; gap: .3rem; }
 .io-stat-num { font-family: var(--io-font-display); font-size: 1.15rem; font-weight: 700; line-height: 1.1; }
 .io-stat-label { color: var(--io-muted); font-size: .74rem; }
 .io-progress { height: 8px; border-radius: 6px; background: rgba(255, 255, 255, .08); overflow: hidden; box-shadow: inset 0 1px 2px rgba(0, 0, 0, .4); }
