@@ -268,6 +268,37 @@ $hasFilters = ($type !== '' || $genreId > 0 || $q !== '' || $sort !== 'rating');
         <?php render_rail($recommended, $favIds, $uid > 0 ? 'Рекомендуем вам' : 'Высоко оцененные зрителями',
             $uid > 0 ? 'Добавьте несколько фильмов в избранное — мы подберём похожие.' : ''); ?>
     </section>
+
+    <?php if (!$hasFilters): ?>
+    <!-- Преимущества подписки: зачем оформлять (наполнение главной) -->
+    <section class="io-section" aria-labelledby="benefits-title">
+        <h2 class="io-section-title h4" id="benefits-title">Почему зрители выбирают Illuminos</h2>
+        <div class="row g-3">
+            <?php
+            $benefits = [
+                ['Подписка вместо аренды', 'Одна подписка — весь каталог. Никаких отдельных покупок фильмов.', '<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0114 0v4"/>'],
+                ['Рекомендации под вкус', 'Система подстраивается под избранное: чем больше смотрите, тем точнее подборки.', '<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>'],
+                ['На любом устройстве', 'Браузер, телефон, планшет, телевизор — прогресс просмотра синхронизируется.', '<rect x="2" y="4" width="14" height="12" rx="2"/><path d="M16 8h6v8a2 2 0 01-2 2h-4"/>'],
+                ['Без рекламы на старте', 'Со второго тарифа — без рекламы: только кино, заставки и титры.', '<path d="M5 3l14 9-14 9V3z"/>'],
+            ];
+            foreach ($benefits as $b): ?>
+            <div class="col-md-6 col-xl-3">
+                <div class="io-benefit h-100">
+                    <span class="io-benefit-icon" aria-hidden="true">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><?= $b[2] ?></svg>
+                    </span>
+                    <h3 class="io-benefit-title"><?= io_e($b[0]) ?></h3>
+                    <p class="io-benefit-text mb-0"><?= io_e($b[1]) ?></p>
+                </div>
+            </div>
+            <?php endforeach; ?>
+        </div>
+        <div class="io-sub-cta">
+            <p class="mb-2">Подписка — от 199 ₽ в месяц. Отменить можно в любой момент.</p>
+            <a class="btn btn-io" href="/payment.php">Выбрать тариф</a>
+        </div>
+    </section>
+    <?php endif; ?>
 </main>
 
 <?php require __DIR__ . '/src/components/footer.php'; ?>

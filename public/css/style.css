@@ -892,6 +892,35 @@ video.io-hero-video {
 .io-account-list dt { color: var(--io-muted); font-weight: 400; font-size: .85rem; }
 .io-account-list dd { margin: 0; font-weight: 500; overflow-wrap: anywhere; text-align: right; }
 
+/* ---------- Homepage benefits + subscription CTA ---------- */
+.io-benefit {
+    display: flex; flex-direction: column; gap: .5rem;
+    padding: 1.2rem 1.3rem;
+    background: var(--io-bg-2);
+    border: 1px solid var(--io-line);
+    border-radius: var(--io-radius-lg);
+    transition: border-color .25s ease, transform .25s ease;
+}
+.io-benefit:hover { border-color: rgba(255, 85, 0, .3); transform: translateY(-3px); }
+.io-benefit-icon {
+    flex: none; width: 44px; height: 44px; border-radius: 12px;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: rgba(255, 85, 0, .12); color: var(--io-accent-soft);
+}
+.io-benefit-title { font-size: 1rem; font-weight: 600; margin: 0; font-family: var(--io-font-display); }
+.io-benefit-text { color: var(--io-muted); font-size: .88rem; }
+.io-sub-cta {
+    margin-top: 1.6rem;
+    padding: 1.6rem 1.8rem;
+    border-radius: var(--io-radius-lg);
+    text-align: center;
+    background:
+        radial-gradient(70% 140% at 50% 0%, rgba(255, 85, 0, .16), transparent 70%),
+        var(--io-bg-2);
+    border: 1px solid rgba(255, 85, 0, .25);
+}
+.io-sub-cta p { color: var(--io-text); font-size: 1.05rem; margin: 0 0 .9rem; }
+
 /* ---------- Payment: текущая подписка, сравнение, способы, FAQ ---------- */
 .io-current-sub {
     display: flex; flex-wrap: wrap; align-items: center; gap: .6rem;
