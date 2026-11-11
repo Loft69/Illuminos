@@ -790,9 +790,9 @@ video.io-hero-video {
 .io-role--user { background: rgba(255, 255, 255, .1); color: #cfcfd4; border: 1px solid rgba(255, 255, 255, .14); }
 .io-role--subscriber { background: rgba(255, 85, 0, .16); color: var(--io-accent-soft); border: 1px solid rgba(255, 85, 0, .38); }
 .io-role--admin { background: rgba(245, 197, 24, .14); color: var(--io-gold); border: 1px solid rgba(245, 197, 24, .4); }
-.io-stats { display: flex; gap: 1.5rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--io-line); }
-.io-stat-num { font-family: var(--io-font-display); font-size: 1.35rem; font-weight: 600; line-height: 1.1; }
-.io-stat-label { font-size: .78rem; color: var(--io-muted); }
+.io-stats { display: flex; gap: 1.8rem; margin: 0; padding: 0; }
+.io-stat-num { font-family: var(--io-font-display); font-size: 1.15rem; font-weight: 700; line-height: 1.1; }
+.io-stat-label { color: var(--io-muted); font-size: .74rem; }
 .io-progress { height: 8px; border-radius: 6px; background: rgba(255, 255, 255, .08); overflow: hidden; box-shadow: inset 0 1px 2px rgba(0, 0, 0, .4); }
 .io-progress span {
     display: block; height: 100%; width: var(--w, 0%); border-radius: 6px;
@@ -930,48 +930,56 @@ video.io-hero-video {
 .io-menu-logout:hover { background: rgba(255, 77, 94, .12); color: #ff7a6b; }
 
 /* ---------- Cabinet: профиль ---------- */
+/* Шапка профиля: одна строка — аватар, имя, справа счётчики */
 .io-profile-head {
-    position: relative;
-    display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 1.5rem;
-    padding: 0 1.6rem 1.4rem;
-    margin: 2rem 0 1.5rem;
-    border-radius: var(--io-radius-lg);
-    border: 1px solid var(--io-line);
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem;
+    padding: .9rem 1.1rem;
+    margin: 1.5rem 0 1.25rem;
     background: var(--io-bg-2);
-    overflow: hidden;
-    box-shadow: 0 24px 50px rgba(0, 0, 0, .4);
+    border: 1px solid var(--io-line);
+    border-radius: var(--io-radius);
 }
-/* Баннер профиля: тёплая волна, уходит под контент */
-.io-profile-head::before {
-    content: "";
-    position: absolute; inset: 0 0 auto 0; height: 118px;
-    background:
-        radial-gradient(60% 160% at 20% 0%, rgba(255, 85, 0, .5), transparent 70%),
-        radial-gradient(50% 140% at 85% 0%, rgba(245, 197, 24, .22), transparent 70%),
-        linear-gradient(180deg, #2b1a10, var(--io-bg-2));
-    pointer-events: none;
-}
-.io-profile-head > * { position: relative; }
-.io-profile-main { display: flex; align-items: flex-end; gap: 1.25rem; min-width: 0; padding-top: 78px; }
+.io-profile-main { display: flex; align-items: center; gap: .9rem; min-width: 0; }
 .io-avatar--lg {
-    width: 92px; height: 92px; font-size: 2rem;
-    border: 3px solid var(--io-bg-2);
-    box-shadow: 0 10px 28px rgba(0, 0, 0, .5), 0 0 0 1px rgba(255, 85, 0, .35);
+    width: 56px; height: 56px; font-size: 1.25rem; border-radius: 12px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .3);
 }
-.io-profile-name { font-family: var(--io-font-display); font-weight: 800; font-size: 1.75rem; margin: 0 0 .2rem; letter-spacing: -.01em; }
-.io-profile-patronymic { color: var(--io-muted); margin: 0 0 .45rem; }
-.io-profile-meta { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; font-size: .82rem; }
-.io-profile-badge { font-size: .7rem; padding: 2px 9px; border-radius: 6px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; }
+.io-profile-name { font-family: var(--io-font-display); font-weight: 800; font-size: 1.25rem; margin: 0 0 .15rem; letter-spacing: -.01em; }
+.io-profile-patronymic { color: var(--io-muted); margin: 0 0 .3rem; font-size: .85rem; }
+.io-profile-meta { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem; font-size: .8rem; }
+.io-profile-badge { font-size: .68rem; padding: 1px 8px; border-radius: 5px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; }
 .io-profile-badge--sub { background: rgba(59, 179, 59, .18); color: #6fe06f; border: 1px solid rgba(59, 179, 59, .4); }
-.io-profile-head .io-stats { margin: 0 0 6px; padding: .8rem 0 0; border: 0; gap: 2.4rem; }
+.io-profile-head .io-stats { margin: 0; padding: 0; border: 0; gap: 1.8rem; }
+
+/* Компактные боковые панели: подписка, аккаунт */
+.io-side-panel {
+    background: var(--io-bg-2);
+    border: 1px solid var(--io-line);
+    border-radius: var(--io-radius);
+    padding: .75rem .95rem;
+}
+.io-side-head { display: flex; align-items: center; justify-content: space-between; gap: .75rem; margin-bottom: .45rem; }
+.io-side-title { font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--io-muted); margin: 0; }
+.io-side-link { font-size: .8rem; font-weight: 600; color: var(--io-accent-soft); text-decoration: none; }
+.io-side-link:hover { color: #fff; }
+.io-side-link--danger { color: #ff7a6b; }
+.io-side-link--danger:hover { color: #ff4d5e; }
+.io-sub-line { margin: 0 0 .45rem; font-size: .9rem; font-weight: 600; }
+.io-sub-line .text-secondary { font-weight: 400; font-size: .82rem; }
 .io-sub-card.is-active { border-color: rgba(59, 179, 59, .35); }
+
+/* Тонкий прогресс-бар для компактных панелей */
+.io-progress--thin { height: 4px; border-radius: 4px; margin-bottom: .2rem; }
+.io-progress--thin span { border-radius: 4px; }
+
 .io-account-list { margin: 0; }
 .io-account-list div {
     display: flex; justify-content: space-between; gap: 1rem;
-    padding: .55rem 0; border-bottom: 1px solid var(--io-line);
+    padding: .4rem 0; border-bottom: 1px solid var(--io-line);
+    font-size: .88rem;
 }
 .io-account-list div:last-child { border-bottom: 0; }
-.io-account-list dt { color: var(--io-muted); font-weight: 400; font-size: .85rem; }
+.io-account-list dt { color: var(--io-muted); font-weight: 400; font-size: .82rem; }
 .io-account-list dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; text-align: right; }
 
 /* ---------- Homepage benefits + subscription CTA ---------- */
@@ -1177,11 +1185,10 @@ video.io-hero-video {
     .io-search .form-control, .io-search-btn { height: 42px; }
     .io-rail { --rail-n: 2; --rail-gap: .75rem; }
     .io-toast { font-size: .85rem; }
-    .io-profile-head { padding: 0 1rem 1.1rem; }
-    .io-profile-main { padding-top: 62px; gap: 1rem; }
-    .io-avatar--lg { width: 72px; height: 72px; font-size: 1.5rem; }
-    .io-profile-name { font-size: 1.3rem; }
-    .io-profile-head .io-stats { gap: 1.4rem; }
+    .io-profile-head { padding: .75rem .85rem; gap: .75rem; }
+    .io-avatar--lg { width: 46px; height: 46px; font-size: 1rem; }
+    .io-profile-name { font-size: 1.05rem; }
+    .io-profile-head .io-stats { gap: 1.2rem; }
 }
 
 /* Планшеты (576–991px) */

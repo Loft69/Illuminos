@@ -117,52 +117,59 @@ $regDate = date('d.m.Y', strtotime($user['created_at']));
                 <p class="io-profile-meta mb-0">
                     <span class="io-role io-role--<?= io_e($role) ?>"><?= htmlspecialchars($roleLabel) ?></span>
                     <?php if ($canWatch): ?><span class="io-profile-badge io-profile-badge--sub">доступ к просмотру</span><?php endif; ?>
-                    <span class="text-secondary">на Illuminos с <?= $regDate ?></span>
+                    <span class="text-secondary">с <?= $regDate ?></span>
                 </p>
             </div>
         </div>
         <div class="io-stats">
-            <div><div class="io-stat-num"><?= count($favorites) ?></div><div class="io-stat-label">в избранном</div></div>
-            <div><div class="io-stat-num" data-stat-history><?= count($history) ?></div><div class="io-stat-label">в истории</div></div>
-            <div><div class="io-stat-num"><?= count($payments) ?></div><div class="io-stat-label">платежей</div></div>
+            <div><span class="io-stat-num"><?= count($favorites) ?></span><span class="io-stat-label">в избранном</span></div>
+            <div><span class="io-stat-num" data-stat-history><?= count($history) ?></span><span class="io-stat-label">в истории</span></div>
+            <div><span class="io-stat-num"><?= count($payments) ?></span><span class="io-stat-label">платежей</span></div>
         </div>
     </div>
 
     <div class="row g-4">
         <!-- Левая колонка: подписка и данные аккаунта -->
         <div class="col-lg-4">
-            <!-- Подписка на сервис (Задание 5) -->
-            <div class="io-card p-3 mb-4 io-sub-card<?= $subscription ? ' is-active' : '' ?>">
-                <h2 class="h6 mb-3">Подписка</h2>
+            <!-- Подписка на сервис (Задание 5): компактная строка-статус -->
+            <div class="io-side-panel mb-3 io-sub-card<?= $subscription ? ' is-active' : '' ?>">
+                <div class="io-side-head">
+                    <h2 class="io-side-title">Подписка</h2>
+                    <?php if ($subscription): ?>
+                        <a href="/payment.php" class="io-side-link">Продлить</a>
+                    <?php else: ?>
+                        <a href="/payment.php" class="io-side-link">Оформить</a>
+                    <?php endif; ?>
+                </div>
                 <?php if ($subscription): ?>
-                    <p class="mb-1">Тариф «<?= htmlspecialchars($subscription['tariff_name']) ?>» активен
-                        до <?= htmlspecialchars(date('d.m.Y', strtotime($subscription['end_date']))) ?>.</p>
-                    <div class="io-progress" role="progressbar" aria-label="Оставшийся срок подписки"
+                    <p class="io-sub-line">
+                        «<?= htmlspecialchars($subscription['tariff_name']) ?>»
+                        <span class="text-secondary">до <?= htmlspecialchars(date('d.m.Y', strtotime($subscription['end_date']))) ?> · <?= $daysLeft ?> <?= io_plural($daysLeft, ['день', 'дня', 'дней']) ?></span>
+                    </p>
+                    <div class="io-progress io-progress--thin" role="progressbar" aria-label="Оставшийся срок подписки"
                          aria-valuemin="0" aria-valuemax="100" aria-valuenow="<?= $leftPct ?>"><span style="--w:<?= $leftPct ?>%"></span></div>
-                    <p class="text-secondary small mt-2">Осталось <?= $daysLeft ?> <?= io_plural($daysLeft, ['день', 'дня', 'дней']) ?>.</p>
-                    <a href="/payment.php" class="btn btn-outline-light btn-sm w-100 mt-1">Продлить или сменить тариф</a>
                 <?php else: ?>
-                    <p class="mb-2">Подписка не оформлена — просмотр фильмов и сериалов недоступен.</p>
-                    <a href="/payment.php" class="btn btn-io btn-sm w-100">Оформить подписку</a>
+                    <p class="io-sub-line text-secondary mb-0">Не оформлена — просмотр недоступен.</p>
                 <?php endif; ?>
             </div>
 
-            <!-- Данные аккаунта -->
-            <div class="io-card p-3 mb-4">
-                <h2 class="h6 mb-3">Аккаунт</h2>
+            <!-- Данные аккаунта: компактный список -->
+            <div class="io-side-panel mb-3">
+                <div class="io-side-head">
+                    <h2 class="io-side-title">Аккаунт</h2>
+                    <a href="/backend/auth.php?action=logout" class="io-side-link io-side-link--danger">Выйти</a>
+                </div>
                 <dl class="io-account-list mb-0">
                     <div><dt>Логин</dt><dd><?= htmlspecialchars($user['login']) ?></dd></div>
                     <div><dt>E-mail</dt><dd><?= htmlspecialchars($user['email']) ?></dd></div>
-                    <div><dt>Роль</dt><dd><?= htmlspecialchars($roleLabel) ?></dd></div>
                 </dl>
-                <a href="/backend/auth.php?action=logout" class="btn btn-outline-light btn-sm w-100 mt-3">Выйти из аккаунта</a>
             </div>
         </div>
 
         <!-- Правая колонка: избранное, история, платежи -->
         <div class="col-lg-8">
             <!-- Избранное (Задание 5) -->
-            <div class="io-card p-3 mb-4">
+            <div class="io-card p-3 mb-3">
                 <h2 class="h6 mb-3">Избранное</h2>
                 <div class="row g-3" data-fav-grid>
                     <?php foreach ($favorites as $f): ?>
@@ -184,7 +191,7 @@ $regDate = date('d.m.Y', strtotime($user['created_at']));
             </div>
 
             <!-- История просмотра (Задание 5) -->
-            <div class="io-card p-3 mb-4">
+            <div class="io-card p-3 mb-3">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <h2 class="h6 mb-0">История просмотра</h2>
                     <?php if ($history): ?><button type="button" class="io-link-danger" data-clear-history>Очистить историю</button><?php endif; ?>
@@ -209,7 +216,7 @@ $regDate = date('d.m.Y', strtotime($user['created_at']));
 
             <!-- Платежи -->
             <?php if ($payments): ?>
-            <div class="io-card p-3 mb-4">
+            <div class="io-card p-3 mb-3">
                 <h2 class="h6 mb-2">Платежи</h2>
                 <ul class="list-group list-group-flush">
                     <?php foreach ($payments as $p): ?>
