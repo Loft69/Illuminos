@@ -67,7 +67,7 @@ function io_poster(array $c, string $class = ''): string {
         <?php endif; ?>
         <?php if (($c['type'] ?? '') === 'serial'): ?><span class="io-poster-type">Сериал</span><?php endif; ?>
         <span class="io-poster-title"><?= io_e($c['title']) ?></span>
-        <span class="io-rating">★ <?= io_e($c['rating']) ?></span>
+        <span class="io-rating"><?= io_e($c['rating']) ?></span>
     </div>
     <?php
     return ob_get_clean();
@@ -83,8 +83,8 @@ function io_fav_button(int $id, bool $inFav, bool $loggedIn, ?string $title = nu
     <button type="button" class="io-fav-btn<?= $inFav ? ' active' : '' ?><?= $class !== '' ? ' ' . io_e($class) : '' ?>"
             data-id="<?= $id ?>"<?= $loggedIn ? '' : ' data-guest="1"' ?>
             title="<?= io_e($title) ?>" aria-pressed="<?= $inFav ? 'true' : 'false' ?>"><?php
-        if ($withLabel): ?><span data-fav-icon><?= $inFav ? '★' : '☆' ?></span> <span data-fav-label><?= $inFav ? 'В избранном' : 'В избранное' ?></span><?php
-        else: ?><?= $inFav ? '★' : '☆' ?><?php endif; ?></button>
+        if ($withLabel): ?><span data-fav-icon><?= $inFav ? '♥' : '♡' ?></span> <span data-fav-label><?= $inFav ? 'В избранном' : 'В избранное' ?></span><?php
+        else: ?><?= $inFav ? '♥' : '♡' ?><?php endif; ?></button>
     <?php
     return ob_get_clean();
 }
@@ -180,7 +180,7 @@ function render_detail(array $c, bool $inFav): void {
             <div class="col-md-8">
                 <h1 class="io-detail-title"><?= io_e($c['title']) ?></h1>
                 <p class="text-secondary mb-2"><?= io_e($c['year']) ?> · <?= io_e($c['genre_name']) ?> ·
-                    оценка зрителей: <strong class="text-warning">★ <?= io_e($c['rating']) ?></strong></p>
+                    <strong class="text-warning"><?= io_e($c['rating']) ?></strong> / 10</p>
                 <div class="io-meter" role="img" aria-label="Рейтинг <?= io_e($c['rating']) ?> из 10"><span style="--w:<?= $pct ?>%"></span></div>
                 <p class="io-detail-text"><?= nl2br(htmlspecialchars((string)$c['description'])) ?></p>
                 <p class="mb-2"><strong>Режиссёр:</strong> <?= io_e($c['director']) ?></p>

@@ -4,6 +4,7 @@
 // =========================================================
 if (session_status() === PHP_SESSION_NONE) session_start();
 require_once __DIR__ . '/../../backend/config.php';
+require_once __DIR__ . '/helpers.php';
 
 // Категории контента для выпадающего меню (Задание 3)
 $genres = $pdo->query('SELECT id, name FROM genres ORDER BY name')->fetchAll();
@@ -20,12 +21,8 @@ $ioHome  = $ioOnIdx && $ioType === '' && $ioGenre === 0 && $q === '';
 <nav class="navbar navbar-expand-lg navbar-dark io-navbar sticky-top">
     <div class="container">
         <a class="navbar-brand io-logo d-flex align-items-center gap-2" href="/index.php">
-            <svg class="io-logo-mark" width="26" height="26" viewBox="0 0 32 32" aria-hidden="true">
-                <path d="M16 16 L31 4 L31 28 Z" fill="currentColor" opacity=".28"/>
-                <circle cx="11" cy="16" r="8" fill="none" stroke="currentColor" stroke-width="3"/>
-                <circle cx="11" cy="16" r="2.6" fill="currentColor"/>
-            </svg>
-            <span>ILLUMINOS</span>
+            <span class="io-logo-icon">▶</span>
+            <span>Illuminos</span>
         </a>
         <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#ioNav" aria-controls="ioNav" aria-expanded="false" aria-label="Меню">
             <span class="navbar-toggler-icon"></span>
@@ -48,25 +45,25 @@ $ioHome  = $ioOnIdx && $ioType === '' && $ioGenre === 0 && $q === '';
                 <?php endif; ?>
             </ul>
             <!-- Поиск по фильмам/сериалам (Задание 3) + подсказки при вводе -->
-            <form class="d-flex me-2 io-search-form" action="/index.php" method="get" role="search">
-                <div class="io-search me-2">
-                    <input class="form-control form-control-sm" type="search" name="q" autocomplete="off"
-                           value="<?= htmlspecialchars($q) ?>" placeholder="Поиск по фильмам и сериалам…"
+            <form class="io-search-form me-lg-2" action="/index.php" method="get" role="search">
+                <div class="io-search">
+                    <input class="form-control" type="search" name="q" autocomplete="off"
+                           value="<?= htmlspecialchars($q) ?>" placeholder="Фильмы, сериалы, персоны…"
                            aria-label="Поиск по фильмам и сериалам" aria-autocomplete="list"
                            aria-controls="ioSuggest" aria-expanded="false">
                     <ul class="io-suggest" id="ioSuggest" role="listbox" hidden></ul>
                 </div>
-                <button class="btn btn-io btn-sm" type="submit">Найти</button>
+                <button class="btn btn-io io-search-btn" type="submit">Найти</button>
             </form>
             <?php if (isset($_SESSION['user'])): ?>
-                <a href="/cabinet.php" class="btn btn-outline-light btn-sm ms-1 mt-2 mt-lg-0">
-                    <?= htmlspecialchars($_SESSION['user']['first_name']) ?>
-                    (<?= htmlspecialchars($_SESSION['user']['role']) ?>)
+                <a href="/cabinet.php" class="io-user ms-1 mt-2 mt-lg-0" title="Личный кабинет">
+                    <span class="io-user-avatar" aria-hidden="true"><?= io_initial((string)$_SESSION['user']['first_name']) ?></span>
+                    <span class="io-user-name d-none d-xl-inline"><?= htmlspecialchars($_SESSION['user']['first_name']) ?></span>
                 </a>
-                <a href="/backend/auth.php?action=logout" class="btn btn-outline-danger btn-sm ms-1 mt-2 mt-lg-0">Выход</a>
+                <a href="/backend/auth.php?action=logout" class="btn btn-outline-light btn-sm io-auth-btn ms-1 mt-2 mt-lg-0">Выход</a>
             <?php else: ?>
-                <a href="/login.php" class="btn btn-outline-light btn-sm ms-1 mt-2 mt-lg-0">Вход</a>
-                <a href="/register.php" class="btn btn-io btn-sm ms-1 mt-2 mt-lg-0">Регистрация</a>
+                <a href="/login.php" class="btn btn-outline-light btn-sm io-auth-btn ms-1 mt-2 mt-lg-0">Войти</a>
+                <a href="/register.php" class="btn btn-io btn-sm io-auth-btn ms-1 mt-2 mt-lg-0">Регистрация</a>
             <?php endif; ?>
         </div>
     </div>

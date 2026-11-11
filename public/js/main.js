@@ -279,10 +279,10 @@ function paintFav(btn, inFav) {
     const icon = $('[data-fav-icon]', btn);
     const label = $('[data-fav-label]', btn);
     if (icon) {
-        icon.textContent = inFav ? '★' : '☆';
+        icon.textContent = inFav ? '♥' : '♡';
         if (label) label.textContent = inFav ? 'В избранном' : 'В избранное';
     } else {
-        btn.textContent = inFav ? '★' : '☆';
+        btn.textContent = inFav ? '♥' : '♡';
     }
     btn.title = inFav ? 'Убрать из избранного' : 'В избранное';
 }
@@ -338,17 +338,61 @@ document.addEventListener('click', (e) => {
     toggleFav(btn);
 });
 
-// ---------- Герой-карусель на главной ----------
+// ---------- Герой-карусель на главной + фоновые трейлеры ----------
 const hero = $('[data-hero]');
 if (hero) {
     const slides = $$('.io-hero-slide', hero);
-    const thumbs = $$('.io-hero-thumb', hero);
-    const toggle = $('.io-hero-toggle', hero);
+    const thumbs = $$('.io-hero-thumb, .io-hero-dot', hero);
+    const toggle = $('.io-hero-toggle:not(.io-hero-sound)', hero);
+    const soundBtn = $('[data-hero-sound]', hero);
     let cur = 0;
     let stopped = reduceMotion; // при «уменьшить движение» автосмена выключена
 
+    // ---------- Фоновые трейлеры: локальные <video> ----------
+    // Грузится лениво (только активный и соседние слайды), по умолчанию без звука;
+    // звук — отдельной кнопкой. Видео зациклено и играет только на активном слайде.
+    const videoEls = $$('[data-hero-video]', hero);
+    let soundOn = false; // звук фонового трейлера (по умолчанию выключен)
+
+    function syncVideos() {
+        const active = slides[cur];
+        videoEls.forEach((v) => {
+            const slide = v.closest('.io-hero-slide');
+            const isActive = slide === active;
+            const idx = slides.indexOf(slide);
+            const near = idx >= 0 && Math.abs(idx - cur) <= 1;
+            // ленивая загрузка: присваиваем src только близким слайдам
+            if (near && !v.src && v.dataset.src) {
+                v.src = v.dataset.src;
+                v.load();
+            }
+            if (!v.src) return;
+            if (isActive && !stopped && !document.hidden) {
+                v.play().catch(() => {}); // автоплей может быть отклонён — фон останется градиентом
+            } else {
+                v.pause();
+            }
+            v.muted = !(soundOn && isActive);
+        });
+    }
+
+    // Кнопка звука: включает звук активного трейлера (остальные — muted)
+    if (soundBtn) {
+        soundBtn.addEventListener('click', () => {
+            soundOn = !soundOn;
+            soundBtn.setAttribute('aria-pressed', String(soundOn));
+            soundBtn.setAttribute('aria-label', soundOn ? 'Выключить звук трейлера' : 'Включить звук трейлера');
+            soundBtn.title = soundOn ? 'Выключить звук трейлера' : 'Включить звук трейлера';
+            syncVideos();
+        });
+    }
+
     const render = () => hero.classList.toggle('is-stopped', stopped);
-    const setPlaying = () => hero.classList.toggle('is-playing', !stopped && !document.hidden);
+    const setPlaying = () => {
+        hero.classList.toggle('is-playing', !stopped && !document.hidden);
+        syncVideos();
+        restartTimer();
+    };
 
     function go(i) {
         i = (i + slides.length) % slides.length;
@@ -362,22 +406,28 @@ if (hero) {
         slides[cur].removeAttribute('aria-hidden');
         thumbs[cur] && thumbs[cur].classList.add('is-active');
         thumbs[cur] && thumbs[cur].setAttribute('aria-current', 'true');
+        syncVideos();
+        restartTimer();
     }
 
     thumbs.forEach((t, i) => t.addEventListener('click', () => {
         go(i);
-        // Перезапуск полосы прогресса на текущей миниатюре
-        hero.classList.remove('is-playing');
-        void hero.offsetWidth;
-        setPlaying();
+        // перезапуск таймера автосмены
+        restartTimer();
     }));
 
-    // Смена слайда — по окончании полосы прогресса (пауза CSS = пауза таймера)
-    hero.addEventListener('animationend', (e) => {
-        if (e.target.classList.contains('io-hero-bar')) go(cur + 1);
-    });
+    // Автосмена по таймеру 7 секунд (полосы прогресса на миниатюрах убраны)
+    const SLIDE_MS = 7000;
+    let slideTimer = null;
+    const restartTimer = () => {
+        clearInterval(slideTimer);
+        if (!stopped && !reduceMotion && slides.length > 1) {
+            slideTimer = setInterval(() => { if (!document.hidden && !hero.classList.contains('is-paused')) go(cur + 1); }, SLIDE_MS);
+        }
+    };
 
     // Пауза при наведении и фокусе, кнопка пауза/пуск (WCAG 2.2.2)
+    // Наведение не ставит трейлер на паузу: видео — живой фон; паузит только смена слайдов
     const pause = (on) => hero.classList.toggle('is-paused', on);
     hero.addEventListener('mouseenter', () => pause(true));
     hero.addEventListener('mouseleave', () => pause(false));
@@ -394,7 +444,6 @@ if (hero) {
             setPlaying();
         });
     }
-
     // Клавиши ← → и свайп
     hero.addEventListener('keydown', (e) => {
         if (e.key === 'ArrowRight') go(cur + 1);

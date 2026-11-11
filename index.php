@@ -101,8 +101,32 @@ $filtered = $stmt->fetchAll();
 // Избранное текущего пользователя (для подсветки кнопок)
 $favIds = io_fav_ids($pdo, (int)$uid);
 
-// Герой: самые свежие новинки
+// Герой: самые свежие новинки.
+// Фоновые трейлеры — локальные файлы (public/video), соответствуют content.id:
+// скачиваются один раз (скриптом), грузятся мгновенно, YouTube-iframe не нужен.
+$heroVideoMap = [
+    1 => '/public/video/trailer-01.mp4',
+    2 => '/public/video/trailer-02.mp4',
+    3 => '/public/video/trailer-03.mp4',
+    4 => '/public/video/trailer-04.mp4',
+    5 => '/public/video/trailer-05.mp4',
+    6 => '/public/video/trailer-06.mp4',
+    7 => '/public/video/trailer-07.mp4',
+    8 => '/public/video/trailer-08.mp4',
+    9 => '/public/video/trailer-09.mp4',
+    10 => '/public/video/trailer-10.mp4',
+    11 => '/public/video/trailer-11.mp4',
+    12 => '/public/video/trailer-12.mp4',
+    13 => '/public/video/trailer-13.mp4',
+    14 => '/public/video/trailer-14.mp4',
+    15 => '/public/video/trailer-15.mp4',
+    16 => '/public/video/trailer-16.mp4',
+];
 $heroItems = array_slice($news, 0, 5);
+foreach ($heroItems as &$h) {
+    $h['hero_video'] = $heroVideoMap[(int)$h['id']] ?? null;
+}
+unset($h);
 
 /** Ссылка на каталог с учётом текущих фильтров (изменяем только переданные параметры) */
 function catalog_url(array $over = []): string {
@@ -135,9 +159,13 @@ $hasFilters = ($type !== '' || $genreId > 0 || $q !== '' || $sort !== 'rating');
             <?php foreach ($heroItems as $i => $h): $inFavH = in_array((int)$h['id'], $favIds, true); ?>
             <article class="io-hero-slide<?= $i === 0 ? ' is-active' : '' ?>" style="<?= io_poster_style($h) ?>"
                      <?= $i === 0 ? '' : 'aria-hidden="true"' ?>>
+                <?php if (!empty($h['hero_video'])): ?>
+                    <!-- Фон: локальный трейлер без звука, звук — кнопкой (main.js) -->
+                    <video class="io-hero-video" data-hero-video muted loop playsinline preload="none" data-src="<?= io_e($h['hero_video']) ?>"></video>
+                <?php endif; ?>
                 <div class="io-hero-copy">
                     <div class="io-hero-tags">
-                        <span class="io-tag io-tag--gold">★ <?= io_e($h['rating']) ?></span>
+                        <span class="io-tag io-tag--gold"><?= io_e($h['rating']) ?></span>
                         <span class="io-tag"><?= io_e(io_type_label($h['type'])) ?></span>
                         <span class="io-tag"><?= io_e($h['genre_name']) ?></span>
                         <span class="io-tag"><?= io_e($h['year']) ?></span>
@@ -157,19 +185,22 @@ $hasFilters = ($type !== '' || $genreId > 0 || $q !== '' || $sort !== 'rating');
         </div>
         <?php if (count($heroItems) > 1): ?>
         <div class="io-hero-nav">
-            <div class="io-hero-thumbs">
+            <div class="io-hero-dots" role="group" aria-label="Новинки">
                 <?php foreach ($heroItems as $i => $h): ?>
-                <button type="button" class="io-hero-thumb<?= $i === 0 ? ' is-active' : '' ?>" style="<?= io_poster_style($h) ?>"
-                        aria-label="<?= io_e($h['title']) ?>" aria-current="<?= $i === 0 ? 'true' : 'false' ?>">
-                    <span class="io-hero-thumb-img"<?= !empty($h['poster_url']) ? ' style="background-image:url(\'' . io_e($h['poster_url']) . '\');background-size:cover;background-position:center;"' : '' ?>></span>
-                    <span class="io-hero-bar"></span>
-                </button>
+                <button type="button" class="io-hero-dot<?= $i === 0 ? ' is-active' : '' ?>"
+                        aria-label="<?= io_e($h['title']) ?>" aria-current="<?= $i === 0 ? 'true' : 'false' ?>"></button>
                 <?php endforeach; ?>
             </div>
-            <button type="button" class="io-hero-toggle" aria-label="Остановить автосмену">
-                <svg class="i-pause" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="5" y="4" width="5" height="16" rx="1"/><rect x="14" y="4" width="5" height="16" rx="1"/></svg>
-                <svg class="i-play" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4l13 8-13 8z"/></svg>
-            </button>
+            <div class="io-hero-controls">
+                <button type="button" class="io-hero-toggle io-hero-sound" data-hero-sound aria-label="Включить звук трейлера" aria-pressed="false" title="Звук трейлера">
+                    <svg class="i-muted" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M23 9l-6 6M17 9l6 6"/></svg>
+                    <svg class="i-loud" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 011 3.5 5 5 0 01-1 3.5"/><path d="M19 5a9 9 0 010 14"/></svg>
+                </button>
+                <button type="button" class="io-hero-toggle" aria-label="Остановить автосмену">
+                    <svg class="i-pause" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="5" y="4" width="5" height="16" rx="1"/><rect x="14" y="4" width="5" height="16" rx="1"/></svg>
+                    <svg class="i-play" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4l13 8-13 8z"/></svg>
+                </button>
+            </div>
         </div>
         <?php endif; ?>
     </section>

@@ -8,28 +8,25 @@ $ioAuth = isset($_SESSION['user']);
 <footer class="io-footer mt-auto">
     <div class="container">
         <div class="row g-4 io-footer-top">
-            <div class="col-md-5">
+            <div class="col-md-4">
                 <div class="io-logo d-flex align-items-center gap-2 mb-2">
-                    <svg class="io-logo-mark" width="22" height="22" viewBox="0 0 32 32" aria-hidden="true">
-                        <path d="M16 16 L31 4 L31 28 Z" fill="currentColor" opacity=".28"/>
-                        <circle cx="11" cy="16" r="8" fill="none" stroke="currentColor" stroke-width="3"/>
-                        <circle cx="11" cy="16" r="2.6" fill="currentColor"/>
-                    </svg>
-                    <span>ILLUMINOS</span>
+                    <span class="io-logo-icon">▶</span>
+                    <span>Illuminos</span>
                 </div>
-                <p class="mb-0 small">Фильмы и сериалы онлайн: подписка, избранное и история просмотров в одном месте.</p>
+                <p class="mb-0 small">Онлайн-кинотеатр нового поколения. Фильмы, сериалы, подписки и персональные рекомендации.</p>
             </div>
-            <div class="col-6 col-md-3">
-                <h2 class="io-footer-title">Смотреть</h2>
+            <div class="col-6 col-md-2">
+                <h2 class="io-footer-title">Разделы</h2>
                 <ul class="list-unstyled mb-0">
+                    <li><a href="/index.php">Главная</a></li>
                     <li><a href="/index.php?type=film">Фильмы</a></li>
                     <li><a href="/index.php?type=serial">Сериалы</a></li>
-                    <li><a href="/payment.php">Тарифы</a></li>
                 </ul>
             </div>
-            <div class="col-6 col-md-4">
-                <h2 class="io-footer-title">Аккаунт</h2>
+            <div class="col-6 col-md-3">
+                <h2 class="io-footer-title">Сервис</h2>
                 <ul class="list-unstyled mb-0">
+                    <li><a href="/payment.php">Подписка</a></li>
                     <?php if ($ioAuth): ?>
                         <li><a href="/cabinet.php">Личный кабинет</a></li>
                     <?php else: ?>
@@ -38,10 +35,14 @@ $ioAuth = isset($_SESSION['user']);
                     <?php endif; ?>
                 </ul>
             </div>
+            <div class="col-md-3">
+                <h2 class="io-footer-title">О проекте</h2>
+                <p class="small mb-0" style="color: var(--io-muted);">Illuminos — учебный проект онлайн-кинотеатра. Все материалы используются в образовательных целях.</p>
+            </div>
         </div>
         <div class="d-flex flex-wrap justify-content-between gap-2 io-footer-bottom">
-            <span>© 2026 Illuminos — онлайн-кинотеатр</span>
-            <span>Смотри. Слушай. Чувствуй.</span>
+            <span>© 2026 Illuminos</span>
+            <span>Сделано с ❤️</span>
         </div>
     </div>
 </footer>
