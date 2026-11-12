@@ -19,8 +19,8 @@ $ioAuth = isset($_SESSION['user']);
                 <h2 class="io-footer-title">Разделы</h2>
                 <ul class="list-unstyled mb-0">
                     <li><a href="/index.php">Главная</a></li>
-                    <li><a href="/index.php?type=film">Фильмы</a></li>
-                    <li><a href="/index.php?type=serial">Сериалы</a></li>
+                    <li><a href="/films.php">Фильмы</a></li>
+                    <li><a href="/serials.php">Сериалы</a></li>
                 </ul>
             </div>
             <div class="col-6 col-md-3">

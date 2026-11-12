@@ -632,6 +632,10 @@ video.io-hero-video {
 .io-segment, .io-sort { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; }
 .io-results-meta { color: var(--io-muted); font-size: .85rem; margin-bottom: .75rem; }
 
+/* Шапка страницы каталога (films.php / serials.php) */
+.io-catalog-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: .6rem 1.2rem; }
+.io-catalog-title { font-family: var(--io-font-display); font-weight: 800; font-size: clamp(1.6rem, 3.5vw, 2.2rem); margin: 0; letter-spacing: -.01em; }
+
 /* ---------- Detail page (movie / series) ---------- */
 .io-detail {
     position: relative; isolation: isolate;

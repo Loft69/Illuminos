@@ -228,8 +228,7 @@ $hasFilters = ($type !== '' || $genreId > 0 || $q !== '' || $sort !== 'rating');
 
     <!-- Категории контента: фильтрация по жанрам (Задание 3, п.6) -->
     <section class="io-section" id="catalog">
-        <h2 class="io-section-title h4">Категории</h2>
-        <div class="io-filters">
+        <h2 class="io-section-title h4">Категории</h2>        <div class="io-filters">
             <div class="io-chips d-flex flex-wrap gap-2" role="group" aria-label="Категории">
                 <a class="btn btn-sm <?= $genreId === 0 ? 'btn-io' : 'btn-outline-light' ?>" href="<?= io_e(catalog_url(['genre' => 0])) ?>"
                    <?= $genreId === 0 ? 'aria-current="true"' : '' ?>>Все</a>
@@ -243,8 +242,8 @@ $hasFilters = ($type !== '' || $genreId > 0 || $q !== '' || $sort !== 'rating');
                 <div class="io-segment" role="group" aria-label="Тип контента">
                     <span class="io-filter-label">Показать:</span>
                     <a class="btn btn-sm <?= $type === '' ? 'btn-io' : 'btn-outline-light' ?>" href="<?= io_e(catalog_url(['type' => ''])) ?>">Всё</a>
-                    <a class="btn btn-sm <?= $type === 'film' ? 'btn-io' : 'btn-outline-light' ?>" href="<?= io_e(catalog_url(['type' => 'film'])) ?>">Фильмы</a>
-                    <a class="btn btn-sm <?= $type === 'serial' ? 'btn-io' : 'btn-outline-light' ?>" href="<?= io_e(catalog_url(['type' => 'serial'])) ?>">Сериалы</a>
+                    <a class="btn btn-sm <?= $type === 'film' ? 'btn-io' : 'btn-outline-light' ?>" href="/films.php">Фильмы</a>
+                    <a class="btn btn-sm <?= $type === 'serial' ? 'btn-io' : 'btn-outline-light' ?>" href="/serials.php">Сериалы</a>
                 </div>
                 <div class="io-sort" role="group" aria-label="Сортировка">
                     <span class="io-filter-label">Сортировка:</span>

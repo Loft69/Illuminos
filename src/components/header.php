@@ -30,8 +30,8 @@ $ioHome  = $ioOnIdx && $ioType === '' && $ioGenre === 0 && $q === '';
         <div class="collapse navbar-collapse" id="ioNav">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item"><a class="nav-link<?= $ioHome ? ' active' : '' ?>" <?= $ioHome ? 'aria-current="page"' : '' ?> href="/index.php">Главная</a></li>
-                <li class="nav-item"><a class="nav-link<?= ($ioOnIdx && $ioType === 'film') ? ' active' : '' ?>" href="/index.php?type=film">Фильмы</a></li>
-                <li class="nav-item"><a class="nav-link<?= ($ioOnIdx && $ioType === 'serial') ? ' active' : '' ?>" href="/index.php?type=serial">Сериалы</a></li>
+                <li class="nav-item"><a class="nav-link<?= ($ioPath === 'films.php') ? ' active' : '' ?>" href="/films.php">Фильмы</a></li>
+                <li class="nav-item"><a class="nav-link<?= ($ioPath === 'serials.php') ? ' active' : '' ?>" href="/serials.php">Сериалы</a></li>
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle<?= ($ioOnIdx && $ioGenre > 0) ? ' active' : '' ?>" href="#" data-bs-toggle="dropdown" aria-expanded="false">Категории</a>
                     <ul class="dropdown-menu dropdown-menu-dark">
