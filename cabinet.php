@@ -1,12 +1,4 @@
 <?php
-// =========================================================
-// Личный кабинет (доступен только авторизованным):
-//   - история просмотра (+ очистка)
-//   - подписка на сервис
-//   - избранное (сохранение фильмов/сериалов)
-//   - история платежей
-// Также обрабатывает AJAX-переключение избранного.
-// =========================================================
 require_once __DIR__ . '/backend/config.php';
 require_once __DIR__ . '/src/components/helpers.php';
 session_start();
@@ -46,6 +38,17 @@ $uid = (int)$_SESSION['user']['id'];
 $stmt = $pdo->prepare('SELECT * FROM users WHERE id = ?');
 $stmt->execute([$uid]);
 $user = $stmt->fetch();
+if (!$user) {
+    // Пользователь мог быть удалён из базы после авторизации.
+    $_SESSION = [];
+    session_destroy();
+    header('Location: /login.php');
+    exit;
+}
+
+// Роль берём из актуальной записи БД до вычисления прав доступа.
+$role = (string)$user['role'];
+$_SESSION['user']['role'] = $role;
 
 // Подписка на сервис (Задание 5)
 $subscription = io_subscription($pdo, $_SESSION['user'] ?? []);
@@ -90,7 +93,6 @@ $payments = $stmt->fetchAll();
 $payLabels = ['paid' => 'Оплачен', 'new' => 'Ожидает оплаты', 'cancelled' => 'Отменён'];
 
 $initials = io_initial((string)$user['first_name']) . io_initial((string)$user['last_name']);
-$role = (string)$user['role'];
 $roleLabels = ['admin' => 'Администратор', 'subscriber' => 'Подписчик', 'user' => 'Пользователь'];
 $roleLabel = $roleLabels[$role] ?? $role;
 $regDate = date('d.m.Y', strtotime($user['created_at']));

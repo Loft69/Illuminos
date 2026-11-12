@@ -693,26 +693,56 @@ if (clearBtn) {
     });
 }
 
-// ---------- Оплата: подтверждение покупки ----------
-const payModalEl = $('#payModal');
-if (payModalEl && window.bootstrap) {
-    const modal = new window.bootstrap.Modal(payModalEl);
-    let pending = null;
-    $$('.js-pay-form').forEach((form) => {
-        form.addEventListener('submit', (e) => {
-            e.preventDefault();
-            pending = form;
-            $('[data-pay-name]', payModalEl).textContent = form.dataset.name;
-            $('[data-pay-price]', payModalEl).textContent = form.dataset.price;
-            modal.show();
+// ---------- Оплата подписки ----------
+const checkoutForm = $('#checkoutForm');
+if (checkoutForm) {
+    // После выбора тарифа переносим пользователя прямо к форме оплаты.
+    if (location.hash === '#checkout') {
+        const checkoutSection = $('#checkout');
+        const checkoutTitle = $('#checkout-title', checkoutSection);
+        requestAnimationFrame(() => {
+            setTimeout(() => {
+                checkoutSection.scrollIntoView({
+                    behavior: reduceMotion ? 'auto' : 'smooth',
+                    block: 'center'
+                });
+                checkoutSection.classList.add('is-arrived');
+                if (checkoutTitle) checkoutTitle.focus({preventScroll: true});
+                window.setTimeout(() => checkoutSection.classList.remove('is-arrived'), 1900);
+                history.replaceState(null, '', location.pathname + location.search);
+            }, 80);
         });
+    }
+
+    const submitButton = $('#checkoutSubmit', checkoutForm);
+    const updatePaymentFields = () => {
+        const selected = checkoutForm.querySelector('input[name="payment_method"]:checked')?.value || 'card';
+        $$('[data-payment-fields]', checkoutForm).forEach((block) => {
+            const active = block.dataset.paymentFields === selected;
+            block.hidden = !active;
+            block.querySelectorAll('input, select').forEach((field) => {
+                field.disabled = !active;
+                field.required = active;
+            });
+        });
+    };
+    checkoutForm.querySelectorAll('input[name="payment_method"]').forEach((radio) => radio.addEventListener('change', updatePaymentFields));
+
+    const number = $('#cardNumber', checkoutForm);
+    if (number) number.addEventListener('input', () => {
+        const digits = number.value.replace(/\D/g, '').slice(0, 19);
+        number.value = digits.replace(/(.{4})/g, '$1 ').trim();
     });
-    const confirm = $('[data-pay-confirm]', payModalEl);
-    confirm.addEventListener('click', () => {
-        if (!pending) return;
-        setBusy(confirm, true, 'Обрабатываем платёж…');
-        pending.submit();
+    const expiry = $('#cardExpiry', checkoutForm);
+    if (expiry) expiry.addEventListener('input', () => {
+        const digits = expiry.value.replace(/\D/g, '').slice(0, 4);
+        expiry.value = digits.length > 2 ? digits.slice(0, 2) + '/' + digits.slice(2) : digits;
     });
-    payModalEl.addEventListener('hidden.bs.modal', () => { pending = null; setBusy(confirm, false); confirm.textContent = 'Подтвердить и оплатить'; });
+    const cvv = $('#cardCvv', checkoutForm);
+    if (cvv) cvv.addEventListener('input', (e) => { e.target.value = e.target.value.replace(/\D/g, '').slice(0, 4); });
+
+    updatePaymentFields();
+    checkoutForm.addEventListener('submit', () => setBusy(submitButton, true, 'Обработка…'));
 }
+
 })();

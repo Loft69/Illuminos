@@ -12,35 +12,46 @@ session_start();
 
 $uid = $_SESSION['user']['id'] ?? 0;
 
-// ---------- Оплата тарифа ----------
+// ---------- Оформление оплаты ----------
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['tariff_id'])) {
     if ($uid === 0) { header('Location: /login.php'); exit; }
+
     $tid = (int)$_POST['tariff_id'];
+    $method = (string)($_POST['payment_method'] ?? '');
     $stmt = $pdo->prepare('SELECT * FROM tariffs WHERE id = ?');
     $stmt->execute([$tid]);
     $tariff = $stmt->fetch();
+    $validMethods = ['card', 'sbp', 'yoomoney'];
+    $valid = $tariff && in_array($method, $validMethods, true);
 
-    if ($tariff) {
-        // Точка интеграции платёжной системы (ЮKassa / Robokassa / СБП):
-        // здесь создаётся платёж на стороне платёжного шлюза, после
-        // webhook-уведомления об успехе заказ помечается оплаченным.
-        $paid = payTariff($pdo, $uid, $tariff);
-        $_SESSION['flash_payment'] = $paid ? 'Оплата прошла успешно. Приятного просмотра!' : 'Ошибка оплаты. Попробуйте позже.';
+    if ($valid && $method === 'card') {
+        $cardNumber = preg_replace('/\D+/', '', (string)($_POST['card_number'] ?? ''));
+        $cardName = trim((string)($_POST['card_name'] ?? ''));
+        $expiry = trim((string)($_POST['card_expiry'] ?? ''));
+        $cvv = preg_replace('/\D+/', '', (string)($_POST['card_cvv'] ?? ''));
+        $valid = strlen($cardNumber) >= 13 && strlen($cardNumber) <= 19
+            && $cardName !== '' && preg_match('/^(0[1-9]|1[0-2])\/([0-9]{2})$/', $expiry)
+            && strlen($cvv) >= 3 && strlen($cvv) <= 4;
+    } elseif ($valid && $method === 'sbp') {
+        $valid = trim((string)($_POST['sbp_bank'] ?? '')) !== '';
     }
-    // Post/Redirect/Get: обновление страницы не повторит платёж
+
+    if ($valid) {
+        // Данные карты используются только для проверки формы и не сохраняются.
+        $paid = payTariff($pdo, $uid, $tariff);
+        $_SESSION['flash_payment'] = $paid
+            ? 'Оплата прошла успешно. Подписка активирована.'
+            : 'Не удалось выполнить оплату. Попробуйте ещё раз.';
+    } else {
+        $_SESSION['flash_payment'] = 'Проверьте выбранный способ оплаты и заполненные данные.';
+    }
     header('Location: /payment.php');
     exit;
 }
 
-// Сообщение о результате оплаты (показывается один раз)
 $message = $_SESSION['flash_payment'] ?? '';
 unset($_SESSION['flash_payment']);
 
-/**
- * Оплата тарифа: запись платежа, выдача роли subscriber, активация подписки.
- * В учебном проекте платёж считается успешным; в боевом варианте здесь
- * проверяется подпись webhook платёжной системы (ЮKassa, Robokassa и т.п.).
- */
 function payTariff(PDO $pdo, int $uid, array $tariff): bool {
     try {
         $pdo->beginTransaction();
@@ -55,7 +66,7 @@ function payTariff(PDO $pdo, int $uid, array $tariff): bool {
         $_SESSION['user']['role'] = 'subscriber';
         return true;
     } catch (Throwable $e) {
-        $pdo->rollBack();
+        if ($pdo->inTransaction()) $pdo->rollBack();
         return false;
     }
 }
@@ -76,13 +87,20 @@ if ($uid > 0) {
 // Выделяем предпоследний тариф (Стандарт) как популярный
 $featuredIdx = count($tariffs) >= 2 ? count($tariffs) - 2 : -1;
 
+$selectedTariff = null;
+if (isset($_GET['tariff_id']) && $uid > 0) {
+    $stmt = $pdo->prepare('SELECT * FROM tariffs WHERE id = ?');
+    $stmt->execute([(int)$_GET['tariff_id']]);
+    $selectedTariff = $stmt->fetch() ?: null;
+}
+
 // Способы оплаты (платёжные системы Задания 6)
 $payMethods = [
     ['id' => 'card',   'name' => 'Банковская карта', 'hint' => 'Visa, Mastercard, МИР',
      'svg' => '<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>'],
     ['id' => 'sbp',    'name' => 'СБП', 'hint' => 'Оплата по QR-коду из приложения банка',
      'svg' => '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM18 18h3v3h-3z"/>'],
-    ['id' => 'yookassa', 'name' => 'ЮKassa', 'hint' => 'Счёт на оплату в интернет-банке',
+    ['id' => 'yoomoney', 'name' => 'ЮMoney', 'hint' => 'Оплата электронным кошельком',
      'svg' => '<circle cx="12" cy="12" r="9"/><path d="M12 7v10M9 10h6"/>'],
 ];
 
@@ -107,9 +125,9 @@ $faq = [
 
 <main class="container flex-grow-1" id="main">
     <h1 class="h3 mt-4 mb-1 io-form-title">Подписка Illuminos</h1>
-    <p class="text-secondary mb-4">Все фильмы и сериалы без ограничений. Отменить можно в любой момент в личном кабинете.</p>
+    <p class="text-secondary mb-3">Все фильмы и сериалы без ограничений. Отменить можно в любой момент в личном кабинете.</p>
 
-    <?php if ($message): $ok = str_starts_with($message, 'Оплата'); ?>
+    <?php if ($message): $ok = str_starts_with($message, 'Оплата прошла успешно'); ?>
         <div class="alert <?= $ok ? 'alert-success io-alert-ok' : 'alert-danger' ?>" role="alert">
             <?php if ($ok): ?>
                 <span class="io-check" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#06260f" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
@@ -153,10 +171,7 @@ $faq = [
                 <?php if ($isOwn): ?>
                     <a href="/cabinet.php" class="btn btn-outline-light w-100">В кабинете</a>
                 <?php elseif ($uid > 0): ?>
-                    <form method="post" class="js-pay-form" data-name="<?= htmlspecialchars($t['name']) ?>" data-price="<?= $priceText ?> ₽">
-                        <input type="hidden" name="tariff_id" value="<?= $t['id'] ?>">
-                        <button class="btn <?= $isFeatured ? 'btn-io' : 'btn-outline-light' ?> w-100" type="submit">Оформить за <?= $priceText ?> ₽</button>
-                    </form>
+                    <a class="btn <?= $isFeatured ? 'btn-io' : 'btn-outline-light' ?> w-100" href="/payment.php?tariff_id=<?= (int)$t['id'] ?>#checkout">Оформить за <?= $priceText ?> ₽</a>
                 <?php else: ?>
                     <a href="/login.php" class="btn <?= $isFeatured ? 'btn-io' : 'btn-outline-light' ?> w-100">Войти и оформить</a>
                 <?php endif; ?>
@@ -243,7 +258,7 @@ $faq = [
             </div>
             <?php endforeach; ?>
         </div>
-        <p class="text-secondary small mt-3 mb-0">Платёж защищён: данные карты вводятся на стороне платёжной системы и не хранятся на сайте.</p>
+        <p class="text-secondary small mt-3 mb-0">Выберите удобный способ оплаты при оформлении подписки.</p>
     </section>
 
     <!-- Частые вопросы -->
@@ -266,26 +281,50 @@ $faq = [
     </section>
 </main>
 
-<!-- Подтверждение покупки -->
-<div class="modal fade io-modal" id="payModal" tabindex="-1" aria-labelledby="payModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 class="modal-title h5" id="payModalLabel">Подтвердите покупку</h2>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Закрыть"></button>
-            </div>
-            <div class="modal-body">
-                <p class="mb-1">Тариф «<span data-pay-name></span>»</p>
-                <p class="io-pay-sum mb-2" data-pay-price></p>
-                <p class="text-secondary small mb-2">Оплата картой, СБП или через ЮKassa — способ выберете дальше.</p>
-                <p class="text-secondary small mb-0">Подписка будет активирована сразу после оплаты.</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Отмена</button>
-                <button type="button" class="btn btn-io" data-pay-confirm>Подтвердить и оплатить</button>
-            </div>
+<?php if ($selectedTariff): ?>
+<section class="io-section" id="checkout" aria-labelledby="checkout-title">
+    <div class="io-checkout-card">
+        <div class="io-checkout-heading">
+            <div><span class="text-secondary small">Оформление заказа</span><h2 class="h4 mb-1" id="checkout-title" tabindex="-1">Оплата подписки</h2><p class="text-secondary mb-0">Тариф «<?= htmlspecialchars($selectedTariff['name']) ?>» · <?= (int)$selectedTariff['duration_days'] ?> дней</p></div>
+            <div class="io-checkout-total"><span>К оплате</span><strong><?= number_format((float)$selectedTariff['price'], 0, '', ' ') ?> ₽</strong></div>
         </div>
+        <form method="post" id="checkoutForm" autocomplete="on">
+            <input type="hidden" name="tariff_id" value="<?= (int)$selectedTariff['id'] ?>">
+            <h3 class="h6 mb-3">Выберите способ оплаты</h3>
+            <div class="io-checkout-methods">
+                <label class="io-checkout-method"><input type="radio" name="payment_method" value="card" checked><span class="io-checkout-method-logo">▰</span><span><strong>Банковская карта</strong><small>МИР, Visa, Mastercard</small></span></label>
+                <label class="io-checkout-method"><input type="radio" name="payment_method" value="sbp"><span class="io-checkout-method-logo">⌗</span><span><strong>СБП</strong><small>Оплата через приложение банка</small></span></label>
+                <label class="io-checkout-method"><input type="radio" name="payment_method" value="yoomoney"><span class="io-checkout-method-logo">Ю</span><span><strong>ЮMoney</strong><small>Электронный кошелёк</small></span></label>
+            </div>
+
+            <div class="io-payment-fields mt-4" data-payment-fields="card">
+                <h3 class="h6 mb-3">Данные карты</h3>
+                <div class="row g-3">
+                    <div class="col-12"><label class="form-label" for="cardNumber">Номер карты</label><input class="form-control" id="cardNumber" name="card_number" inputmode="numeric" autocomplete="cc-number" placeholder="0000 0000 0000 0000" maxlength="23" required></div>
+                    <div class="col-md-6"><label class="form-label" for="cardName">Имя владельца</label><input class="form-control text-uppercase" id="cardName" name="card_name" autocomplete="cc-name" placeholder="IVAN IVANOV" maxlength="80" required></div>
+                    <div class="col-6 col-md-3"><label class="form-label" for="cardExpiry">Срок действия</label><input class="form-control" id="cardExpiry" name="card_expiry" inputmode="numeric" autocomplete="cc-exp" placeholder="ММ/ГГ" maxlength="5" required></div>
+                    <div class="col-6 col-md-3"><label class="form-label" for="cardCvv">CVC / CVV</label><input class="form-control" id="cardCvv" name="card_cvv" type="password" inputmode="numeric" autocomplete="cc-csc" placeholder="•••" maxlength="4" required></div>
+                </div>
+            </div>
+
+            <div class="io-payment-fields mt-4" data-payment-fields="sbp" hidden>
+                <h3 class="h6 mb-3">Выберите банк</h3>
+                <select class="form-select" name="sbp_bank" id="sbpBank" disabled><option value="">Выберите ваш банк</option><option>СберБанк</option><option>Т-Банк</option><option>ВТБ</option><option>Альфа-Банк</option><option>Газпромбанк</option><option>Другой банк</option></select>
+                <p class="text-secondary small mt-3 mb-0">Подтвердите оплату в приложении выбранного банка.</p>
+            </div>
+
+            <div class="io-payment-fields mt-4" data-payment-fields="yoomoney" hidden>
+                <h3 class="h6 mb-2">Оплата через ЮMoney</h3>
+                <p class="text-secondary mb-0">Подтвердите платёж выбранным способом.</p>
+            </div>
+            <div class="io-payment-secure mt-4"><span aria-hidden="true">✓</span> Данные банковской карты не сохраняются</div>
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mt-4">
+                <a href="/payment.php" class="btn btn-outline-light">Изменить тариф</a>
+                <button type="submit" class="btn btn-io px-4" id="checkoutSubmit">Оплатить <?= number_format((float)$selectedTariff['price'], 0, '', ' ') ?> ₽</button>
+            </div>
+        </form>
     </div>
-</div>
+</section>
+<?php endif; ?>
 
 <?php require __DIR__ . '/src/components/footer.php'; ?>

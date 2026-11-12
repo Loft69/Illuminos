@@ -300,10 +300,6 @@ $hasFilters = ($type !== '' || $genreId > 0 || $q !== '' || $sort !== 'rating');
             </div>
             <?php endforeach; ?>
         </div>
-        <div class="io-sub-cta">
-            <p class="mb-2">Подписка — от 199 ₽ в месяц. Отменить можно в любой момент.</p>
-            <a class="btn btn-io" href="/payment.php">Выбрать тариф</a>
-        </div>
     </section>
     <?php endif; ?>
 </main>
